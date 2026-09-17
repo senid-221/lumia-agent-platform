@@ -31,6 +31,15 @@ await app.register(helmet);
 await app.register(cors, { origin: env.CORS_ORIGIN === '*' ? true : env.CORS_ORIGIN });
 await app.register(rateLimit, { max: 120, timeWindow: '1 minute' });
 
+app.get('/', async () => ({
+  status: 'ok',
+  service: 'LUMIA AGENT PLATFORM API',
+  message: 'LUMIA Agent Platform backend is running.',
+  version: '1.0.0',
+  health: '/health',
+  api: '/api/v1'
+}));
+
 app.get('/health', async () => ({ status: 'ok', service: 'LUMIA AGENT PLATFORM', version: '1.0.0' }));
 
 app.post('/api/v1/auth/register', async (request, reply) => {
