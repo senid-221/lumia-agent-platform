@@ -3,12 +3,12 @@ services:
     name: lumia-agent-platform-api
     runtime: node
     plan: free
-    buildCommand: npm install && npx prisma generate && npm run build
-    startCommand: npm run prisma:migrate && npm start
+    buildCommand: npm install
+    startCommand: npm run build && npm run prisma:migrate && npm start
     healthCheckPath: /health
     envVars:
       - key: NODE_VERSION
-        value: 24.14.1
+        value: 24.x
       - key: PORT
         value: 10000
       - key: DATABASE_URL
@@ -19,3 +19,5 @@ services:
         value: "*"
       - key: EXA_API_KEY
         sync: false
+      - key: IREMBO_OFFICIAL_URL
+        value: https://irembo.gov.rw
