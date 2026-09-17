@@ -1,6 +1,8 @@
 import 'dotenv/config';
 import { z } from 'zod';
 
+const runtimeEnv = globalThis.process?.env ?? {};
+
 const schema = z.object({
   NODE_ENV: z.string().default('development'),
   PORT: z.coerce.number().default(10000),
@@ -11,4 +13,4 @@ const schema = z.object({
   CORS_ORIGIN: z.string().default('*')
 });
 
-export const env = schema.parse(process.env);
+export const env = schema.parse(runtimeEnv);
