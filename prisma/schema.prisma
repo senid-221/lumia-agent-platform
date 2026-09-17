@@ -1,20 +1,54 @@
-generator client { provider = "prisma-client-js" }
+generator client {
+  provider = "prisma-client-js"
+}
 
-datasource db { provider = "postgresql" url = env("DATABASE_URL") }
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
 
-enum Role { CUSTOMER AGENT ADMIN }
-enum AgentStatus { PENDING ACTIVE SUSPENDED REJECTED }
-enum VerificationStatus { PENDING VERIFIED REJECTED }
-enum SubscriptionStatus { PENDING ACTIVE EXPIRED CANCELLED }
-enum RequestStatus { PENDING MATCHED ACCEPTED IN_PROGRESS COMPLETED CANCELLED }
+enum Role {
+  CUSTOMER
+  AGENT
+  ADMIN
+}
+
+enum AgentStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  REJECTED
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum SubscriptionStatus {
+  PENDING
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+enum RequestStatus {
+  PENDING
+  MATCHED
+  ACCEPTED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
 
 model User {
-  id           String       @id @default(cuid())
-  email        String       @unique
+  id           String           @id @default(cuid())
+  email        String           @unique
   passwordHash String
-  role         Role         @default(CUSTOMER)
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
+  role         Role             @default(CUSTOMER)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
   agent        IremboAgent?
   sessions     Session[]
   requests     ServiceRequest[] @relation("CustomerRequests")
@@ -41,8 +75,8 @@ model Message {
 }
 
 model IremboService {
-  id               String   @id @default(cuid())
-  slug             String   @unique
+  id               String           @id @default(cuid())
+  slug             String           @unique
   name             String
   category         String
   institution      String?
@@ -52,16 +86,16 @@ model IremboService {
   processingTime   String?
   accountRequired  Boolean?
   officialUrl      String?
-  active           Boolean  @default(true)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  active           Boolean          @default(true)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
   requests         ServiceRequest[]
   @@index([category, active])
 }
 
 model IremboAgent {
-  id                 String             @id @default(cuid())
-  userId             String             @unique
+  id                 String              @id @default(cuid())
+  userId             String              @unique
   displayName        String
   phone              String
   location           String
@@ -69,7 +103,7 @@ model IremboAgent {
   bio                String?
   status             AgentStatus         @default(PENDING)
   verificationStatus VerificationStatus  @default(PENDING)
-  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   subscriptions      AgentSubscription[]
   requests           ServiceRequest[]
   createdAt          DateTime            @default(now())
@@ -78,25 +112,25 @@ model IremboAgent {
 }
 
 model AgentPlan {
-  id           String             @id @default(cuid())
-  name         String             @unique
-  priceRwf     Int
-  durationDays Int
-  active       Boolean            @default(true)
+  id            String              @id @default(cuid())
+  name          String              @unique
+  priceRwf      Int
+  durationDays  Int
+  active        Boolean             @default(true)
   subscriptions AgentSubscription[]
 }
 
 model AgentSubscription {
-  id        String             @id @default(cuid())
-  agentId   String
-  planId    String
-  status    SubscriptionStatus  @default(PENDING)
-  startsAt  DateTime?
-  expiresAt DateTime?
+  id         String             @id @default(cuid())
+  agentId    String
+  planId     String
+  status     SubscriptionStatus  @default(PENDING)
+  startsAt   DateTime?
+  expiresAt  DateTime?
   paymentRef String?
-  agent     IremboAgent         @relation(fields: [agentId], references: [id], onDelete: Cascade)
-  plan      AgentPlan           @relation(fields: [planId], references: [id])
-  createdAt DateTime            @default(now())
+  agent      IremboAgent         @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  plan       AgentPlan           @relation(fields: [planId], references: [id])
+  createdAt  DateTime            @default(now())
   @@index([agentId, status, expiresAt])
 }
 
