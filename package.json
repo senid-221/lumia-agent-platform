@@ -3,13 +3,13 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "engines": { "node": "24.x" },
+  "engines": { "node": ">=24.0.0 <25.0.0" },
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "npm run prisma:generate && tsc -p tsconfig.json",
-    "start": "node dist/server.js",
-    "prisma:generate": "prisma generate --schema=prisma/schema.prisma",
-    "prisma:migrate": "prisma migrate deploy --schema=prisma/schema.prisma",
+    "start": "npm run prisma:migrate && node dist/server.js",
+    "prisma:generate": "./node_modules/.bin/prisma generate --schema=prisma/schema.prisma",
+    "prisma:migrate": "./node_modules/.bin/prisma migrate deploy --schema=prisma/schema.prisma",
     "prisma:seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
