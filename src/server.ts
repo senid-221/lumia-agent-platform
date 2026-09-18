@@ -216,17 +216,36 @@ app.post('/api/v1/whatsapp/webhook', async (request, reply) => {
 });
 
 app.post('/api/v1/auth/register', async (request, reply) => {
-  const body = z.object({ email: z.string().email(), password: z.string().min(8) }).parse(request.body);
-  const exists = await db.user.findUnique({ where: { email: body.email.toLowerCase() } });
-  if (exists) return reply.code(409).send({ error: 'Email already registered' });
-  const user = await db.user.create({ data: { email: body.email.toLowerCase(), passwordHash: await bcrypt.hash(body.password, 12) } });
-  return { token: await token({ id: user.id, email: user.email, role: user.role }), user: { id: user.id, email: user.email, role: user.role } };
+  const body = z.object({
+    email: z.string().email(),
+    password: z.string().min(8),
+    phone: z.string().regex(/^\+?[0-9]{8,15}$/)
+  }).parse(request.body);
+
+  const email = body.email.toLowerCase();
+  const exists = await db.user.findFirst({ where: { OR: [{ email }, { phone: body.phone }] } });
+  if (exists) return reply.code(409).send({ error: 'Email or phone already registered' });
+
+  const user = await db.user.create({
+    data: {
+      email,
+      phone: body.phone,
+      passwordHash: await bcrypt.hash(body.password, 12),
+      role: 'CUSTOMER'
+    }
+  });
+
+  return {
+    token: await token({ id: user.id, email: user.email, role: user.role }),
+    user: { id: user.id, email: user.email, phone: user.phone, role: user.role }
+  };
 });
+
 app.post('/api/v1/auth/login', async (request, reply) => {
   const body = z.object({ email: z.string().email(), password: z.string() }).parse(request.body);
   const user = await db.user.findUnique({ where: { email: body.email.toLowerCase() } });
   if (!user || !(await bcrypt.compare(body.password, user.passwordHash))) return reply.code(401).send({ error: 'Invalid email or password' });
-  return { token: await token({ id: user.id, email: user.email, role: user.role }), user: { id: user.id, email: user.email, role: user.role } };
+  return { token: await token({ id: user.id, email: user.email, role: user.role }), user: { id: user.id, email: user.email, phone: user.phone, role: user.role } };
 });
 
 app.get('/api/v1/irembo/services', async () => ({ services: await db.iremboService.findMany({ where: { active: true }, orderBy: [{ category: 'asc' }, { name: 'asc' }] }) }));
@@ -301,11 +320,18 @@ app.post('/api/v1/agent/requests/:id/status', async (request, reply) => {
   });
 
   const customerUser = await db.user.findUnique({ where: { id: updated.customerId } });
-  const customerWaPhone = customerUser?.email.startsWith('wa-') ? customerUser.email.slice(3).split('@')[0] : null;
+  const customerWaPhone = customerUser?.phone ?? (customerUser?.email.startsWith('wa-') ? customerUser.email.slice(3).split('@')[0] : null);
   await notifyWhatsApp(
     customerWaPhone,
     `LUMIA IREMBO UPDATE\n\nService: ${existing.service.name}\nStatus: ${statusText}\nAgent: ${updated.agent?.displayName || 'Not assigned'}\n\nYour request status has been updated.`
   );
+
+  if (updated.agent?.phone) {
+    await notifyWhatsApp(
+      updated.agent.phone,
+      `LUMIA IREMBO\n\nRequest update: ${existing.service.name}\nCustomer: ${existing.customerName}\nStatus: ${statusText}\nCustomer phone: ${existing.customerPhone}`
+    );
+  }
 
   return { request: updated };
 });
