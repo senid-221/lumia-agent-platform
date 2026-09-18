@@ -9,6 +9,7 @@ import * as ExaModule from 'exa-js';
 import { env } from './config.js';
 import { db } from './db.js';
 import { registerBuilderRoutes } from './builder.js';
+import { ensureOfficialIremboCatalog } from './irembo-catalog.js';
 
 const app = Fastify({ logger: true });
 const secret = new TextEncoder().encode(env.JWT_SECRET);
@@ -1254,6 +1255,7 @@ async function ensurePlatformServices() {
 }
 
 await ensurePlatformServices();
+await ensureOfficialIremboCatalog();
 
 app.get('/api/v1/platform/services', async () => {
   const existing = await db.platformService.findMany({ where: { active: true }, orderBy: { name: 'asc' } });
