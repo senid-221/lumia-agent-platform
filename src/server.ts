@@ -303,8 +303,51 @@ const WHATSAPP_MENU = [
   ['requests', 'My Requests']
 ] as const;
 
+const LUMIA_SERVICE_CATALOG = [
+  ['1', 'Hair Fashion'],
+  ['2', 'Driving Training'],
+  ['3', 'Restaurant Bookers'],
+  ['4', 'Shopping Orders'],
+  ['5', 'Car Repairing'],
+  ['6', 'Motor Repairing'],
+  ['7', 'Land Survey'],
+  ['8', 'Computer Repairing'],
+  ['9', 'Boutique Food Ordering'],
+  ['10', 'Website Building'],
+  ['11', 'Web Hosting'],
+  ['12', 'Teaching Tech'],
+  ['13', 'Prompt Generation'],
+  ['14', 'Flyer & Graphic Design'],
+  ['15', 'Jobs for Seekers']
+] as const;
+
 async function sendWhatsAppMenu(to: string) {
-  const body = `LUMIA AI\n\nMurakaza neza kuri LUMIA WhatsApp Agent.\n\nHitamo serivisi:\n\n1. Services zose\n2. Irembo Services\n3. Website Building\n4. Web Hosting\n5. Teaching Tech\n6. Prompt Generation\n7. Flyer & Graphic Design\n8. Jobs for Seekers\n9. Available Irembo Agents\n10. My Requests\n\nAndika nomero (urugero: 2) cyangwa izina rya service.`;
+  const body = `LUMIA AI
+
+Murakaza neza kuri LUMIA WhatsApp Agent.
+
+Hitamo serivisi:
+
+1. Hair Fashion
+2. Driving Training
+3. Restaurant Bookers
+4. Shopping Orders
+5. Car Repairing
+6. Motor Repairing
+7. Land Survey
+8. Computer Repairing
+9. Boutique Food Ordering
+10. Website Building
+11. Web Hosting
+12. Teaching Tech
+13. Prompt Generation
+14. Flyer & Graphic Design
+15. Jobs for Seekers
+16. Irembo Services
+17. Available Irembo Agents
+18. My Requests
+
+Andika nomero (urugero: 1) cyangwa izina rya service.`;
   await sendWhatsAppText(to, body);
 }
 
@@ -426,19 +469,44 @@ async function handleWhatsAppCommand(phone: string, user: any, text: string) {
   }
 
   const menuMap: Record<string, string> = {
-    '1': 'services', 'services': 'services', 'service': 'services',
-    '2': 'irembo', 'irembo': 'irembo',
-    '3': 'website', 'website': 'website', 'website building': 'website',
-    '4': 'hosting', 'hosting': 'hosting', 'web hosting': 'hosting',
-    '5': 'tech', 'teaching tech': 'tech',
-    '6': 'prompts', 'prompt': 'prompts', 'prompt generation': 'prompts',
-    '7': 'design', 'flyer': 'design', 'graphic design': 'design',
-    '8': 'jobs', 'job': 'jobs', 'jobs for seekers': 'jobs',
-    '9': 'agents', 'available agents': 'agents',
-    '10': 'requests', 'my requests': 'requests'
+    '1': 'hair-fashion', 'hair fashion': 'hair-fashion', 'hair': 'hair-fashion', 'salon': 'hair-fashion',
+    '2': 'driving-training', 'driving training': 'driving-training', 'driving': 'driving-training',
+    '3': 'restaurant-bookers', 'restaurant bookers': 'restaurant-bookers', 'restaurant booking': 'restaurant-bookers',
+    '4': 'shopping-orders', 'shopping orders': 'shopping-orders', 'shopping': 'shopping-orders',
+    '5': 'car-repairing', 'car repairing': 'car-repairing', 'car repair': 'car-repairing',
+    '6': 'motor-repairing', 'motor repairing': 'motor-repairing', 'motor repair': 'motor-repairing',
+    '7': 'land-survey', 'land survey': 'land-survey', 'survey': 'land-survey', 'gupima ubutaka': 'land-survey',
+    '8': 'computer-repairing', 'computer repairing': 'computer-repairing', 'computer repair': 'computer-repairing',
+    '9': 'boutique-food-ordering', 'boutique food ordering': 'boutique-food-ordering', 'food ordering': 'boutique-food-ordering',
+    '10': 'website', 'website': 'website', 'website building': 'website',
+    '11': 'hosting', 'hosting': 'hosting', 'web hosting': 'hosting',
+    '12': 'tech', 'teaching tech': 'tech',
+    '13': 'prompts', 'prompt': 'prompts', 'prompt generation': 'prompts',
+    '14': 'design', 'flyer': 'design', 'graphic design': 'design',
+    '15': 'jobs', 'job': 'jobs', 'jobs for seekers': 'jobs',
+    '16': 'irembo', 'irembo': 'irembo',
+    '17': 'agents', 'available agents': 'agents',
+    '18': 'requests', 'my requests': 'requests'
   };
 
   const selected = menuMap[command];
+
+  const newServiceMessages: Record<string, string> = {
+    'hair-fashion': 'HAIR FASHION\\n\\nShaka salon, hair styling, braiding, haircut cyangwa hair products. Andika ibyo ushaka n’aho uri; LUMIA izagufasha gutegura service request.',
+    'driving-training': 'DRIVING TRAINING\\n\\nLUMIA ishobora kugufasha gushaka driving training, amasomo ya theory/practical n’aho wakorera training. Driving schools mu Rwanda zigengwa na RURA. Andika LOCATION yawe n’icyo wifuza kwiga.',
+    'restaurant-bookers': 'RESTAURANT BOOKERS\\n\\nShaka restaurant, menu cyangwa reservation. Andika izina rya restaurant, location, itariki, igihe n’umubare w’abantu.',
+    'shopping-orders': 'SHOPPING ORDERS\\n\\nShaka ibicuruzwa cyangwa utange order. Andika product ushaka, quantity, location yo kuyigezwaho n’uburyo bwo kuvugana nawe.',
+    'car-repairing': 'CAR REPAIRING\\n\\nShaka umukanishi wa moto? Oya — iyi ni CAR REPAIRING. Andika ikibazo cy’imodoka, model yayo n’aho uri.',
+    'motor-repairing': 'MOTOR REPAIRING\\n\\nShaka umukanishi wa moto. Andika ikibazo cya moto, model yayo n’aho uri.',
+    'land-survey': 'LAND SURVEY\\n\\nSerivisi yo gufata ibipimo no gufotora/kwerekana amakuru y’ubutaka. Andika location y’ubutaka n’icyo ushaka gukorerwa. LUMIA izaguhuza n’umupima ubutaka ubifitiye ububasha.',
+    'computer-repairing': 'COMPUTER REPAIRING\\n\\nShaka technician wo gusana computer. Andika ikibazo cya computer, model niba uyizi n’aho uri.',
+    'boutique-food-ordering': 'BOUTIQUE FOOD ORDERING\\n\\nOrder food cyangwa ibiribwa muri boutique/food shop. Andika ibyo ushaka, quantity na delivery location.'
+  };
+
+  if (selected && newServiceMessages[selected]) {
+    await sendWhatsAppText(phone, newServiceMessages[selected] + '\\n\\nAndika DETAILS: ibisobanuro birambuye kugirango dutegure request yawe.');
+    return true;
+  }
 
   if (selected === 'services') {
     await sendWhatsAppText(phone, `LUMIA SERVICES\n\n1. Building website\n2. Web hosting\n3. Teaching tech\n4. Prompt generation\n5. Flyer & graphic design\n6. Irembo agent connect\n7. Jobs for seekers\n8. Donations & community support\n9. NESA exam study support\n10. AI research\n11. Website & app development\n12. Digital business support\n\nAndika service ushaka. LUMIA izagufasha gutangira.`);
