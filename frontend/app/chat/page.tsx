@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Suspense, useState } from 'react';
-import { ArrowUp, Bot, Check, ChevronDown, FileText, Globe2, Image as ImageIcon, MapPin, Menu, MessageCircle, Music2, Paperclip, Plus, Search, Sparkles, Users, X } from 'lucide-react';
+import { ArrowUp, Bot, Check, ChevronDown, FileText, Globe2, Image as ImageIcon, MapPin, Menu, MessageCircle, Music2, Paperclip, Plus, Search, Users, X } from 'lucide-react';
 import { api } from '../../lib/api';
 import { useSearchParams } from 'next/navigation';
 
@@ -114,7 +114,7 @@ function ChatPageContent() {
       <aside className={`fixed inset-y-0 left-0 z-40 w-72 border-r border-white/5 bg-[#151518] p-4 transition-transform lg:static lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex h-full flex-col">
           <div className="flex items-center gap-3 px-2">
-            <div className="grid h-9 w-9 place-items-center rounded-xl bg-violet-500/15 text-violet-300"><Sparkles size={17}/></div>
+            <div className="grid h-9 w-9 place-items-center rounded-xl bg-violet-500/15 text-violet-300 text-sm font-semibold">L</div>
             <div><div className="text-sm font-semibold">LUMIA</div><div className="text-[10px] tracking-[.16em] text-slate-500">AI PLATFORM</div></div>
           </div>
 
@@ -156,15 +156,15 @@ function ChatPageContent() {
 
         <div className="min-h-0 flex-1 overflow-y-auto">
           {messages.length === 0 ? (
-            <div className="flex min-h-full items-center justify-center px-4 py-12">
+            <div className="flex min-h-full items-center justify-center px-4 py-8">
               <div className="w-full max-w-3xl text-center">
-                <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-violet-500/10 text-violet-300 shadow-[0_0_55px_rgba(168,85,247,.18)]"><Sparkles size={24}/></div>
+                <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-violet-500/10 text-violet-300 text-base font-semibold">L</div>
                 <div className="mt-5 text-sm text-slate-500">Welcome to LUMIA AI</div>
-                <h1 className="mt-2 text-3xl font-medium tracking-[-0.03em] text-slate-100 sm:text-5xl">How Can I Assist You?</h1>
+                <h1 className="mt-2 text-2xl font-medium tracking-[-0.03em] text-slate-100 sm:text-4xl">How Can I Assist You?</h1>
                 <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-500">Ask, research, build, learn, code, or get help with Irembo services.</p>
 
                 {service && (
-                  <div className="mx-auto mt-8 max-w-2xl rounded-2xl border border-violet-400/30 bg-violet-500/5 p-5 text-left">
+                  <div className="mx-auto mt-5 max-w-2xl rounded-xl border border-violet-400/30 bg-violet-500/5 p-4 text-left">
                     <div className="text-xs font-semibold uppercase tracking-[.15em] text-violet-300">Selected Irembo service</div>
                     <div className="mt-2 text-lg font-semibold text-slate-100">{service}</div>
                     <div className="mt-4 grid gap-2 sm:grid-cols-3">
@@ -196,9 +196,9 @@ function ChatPageContent() {
 )}
                   </div>
                 )}
-                <div className="mt-10 grid gap-3 sm:grid-cols-3">
+                <div className="mt-6 grid gap-2 sm:grid-cols-3">
                   {['Build a website','Research a topic','Find an Irembo service'].map((item) => (
-                    <button key={item} onClick={() => void sendMessage(item)} className="rounded-2xl border border-white/10 bg-[#1d1d20] p-4 text-left text-sm text-slate-400 transition hover:border-violet-400/40 hover:bg-[#222225]">
+                    <button key={item} onClick={() => void sendMessage(item)} className="rounded-xl border border-white/10 bg-[#1d1d20] p-3 text-left text-sm text-slate-400 transition hover:border-violet-400/40 hover:bg-[#222225]">
                       <div className="mb-9 text-slate-600">{item === 'Research a topic' ? <Search size={16}/> : item === 'Find an Irembo service' ? <Globe2 size={16}/> : <Bot size={16}/>}</div>
                       {item}
                     </button>
@@ -207,7 +207,7 @@ function ChatPageContent() {
               </div>
             </div>
           ) : (
-            <div className="mx-auto max-w-3xl space-y-6 px-4 py-8">
+            <div className="mx-auto max-w-3xl space-y-4 px-4 py-6">
               {messages.map((item, i) => (
                 <div key={`${item.role}-${i}`} className={item.role === 'user' ? 'flex justify-end' : 'flex items-start gap-3'}>
                   {item.role === 'assistant' && <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-white/10 bg-[#202024] text-violet-300"><Bot size={16}/></div>}
