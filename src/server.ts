@@ -42,6 +42,18 @@ app.get('/', async () => ({
 
 app.get('/health', async () => ({ status: 'ok', service: 'LUMIA AGENT PLATFORM', version: '1.0.0' }));
 
+app.get('/api/v1/whatsapp/webhook', async (request, reply) => {
+  const q = z.object({ 'hub.mode': z.string().optional(), 'hub.verify_token': z.string().optional(), 'hub.challenge': z.string().optional() }).parse(request.query);
+  if (q['hub.mode'] !== 'subscribe' || !env.WHATSAPP_VERIFY_TOKEN || q['hub.verify_token'] !== env.WHATSAPP_VERIFY_TOKEN) return reply.code(403).send({ error: 'Webhook verification failed' });
+  return reply.type('text/plain').send(q['hub.challenge'] ?? '');
+});
+
+app.post('/api/v1/whatsapp/webhook', async (request, reply) => {
+  const body = request.body as any;
+  app.log.info({ whatsappWebhook: body }, 'WhatsApp webhook received');
+  return reply.code(200).send({ received: true });
+});
+
 app.post('/api/v1/auth/register', async (request, reply) => {
   const body = z.object({ email: z.string().email(), password: z.string().min(8) }).parse(request.body);
   const exists = await db.user.findUnique({ where: { email: body.email.toLowerCase() } });
