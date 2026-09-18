@@ -42,6 +42,51 @@ app.get('/', async () => ({
 
 app.get('/health', async () => ({ status: 'ok', service: 'LUMIA AGENT PLATFORM', version: '1.0.0' }));
 
+async function sendWhatsAppText(to: string, body: string) {
+  if (!env.WHATSAPP_ACCESS_TOKEN || !env.WHATSAPP_PHONE_NUMBER_ID) throw new Error('WhatsApp credentials are not configured');
+  const url = `https://graph.facebook.com/${env.WHATSAPP_GRAPH_VERSION}/${env.WHATSAPP_PHONE_NUMBER_ID}/messages`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${env.WHATSAPP_ACCESS_TOKEN}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      messaging_product: 'whatsapp',
+      to,
+      type: 'text',
+      text: { body }
+    })
+  });
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`WhatsApp send failed (${response.status}): ${detail}`);
+  }
+}
+
+async function getWhatsAppSession(phone: string) {
+  const email = `wa-${phone.replace(/\D/g, '')}@whatsapp.lumia.local`;
+  let user = await db.user.findUnique({ where: { email } });
+  if (!user) {
+    user = await db.user.create({
+      data: {
+        email,
+        passwordHash: await bcrypt.hash(crypto.randomUUID(), 10),
+        role: 'CUSTOMER'
+      }
+    });
+  }
+  let session = await db.session.findFirst({ where: { userId: user.id }, orderBy: { updatedAt: 'desc' } });
+  if (!session) {
+    session = await db.session.create({ data: { userId: user.id, title: 'WhatsApp chat' } });
+  }
+  return { user, session };
+}
+
+async function generateLumiaReply(message: string) {
+  return `LUMIA received your message: ${message}`;
+}
+
 app.get('/api/v1/whatsapp/webhook', async (request, reply) => {
   const q = z.object({ 'hub.mode': z.string().optional(), 'hub.verify_token': z.string().optional(), 'hub.challenge': z.string().optional() }).parse(request.query);
   if (q['hub.mode'] !== 'subscribe' || !env.WHATSAPP_VERIFY_TOKEN || q['hub.verify_token'] !== env.WHATSAPP_VERIFY_TOKEN) return reply.code(403).send({ error: 'Webhook verification failed' });
@@ -51,7 +96,25 @@ app.get('/api/v1/whatsapp/webhook', async (request, reply) => {
 app.post('/api/v1/whatsapp/webhook', async (request, reply) => {
   const body = request.body as any;
   app.log.info({ whatsappWebhook: body }, 'WhatsApp webhook received');
-  return reply.code(200).send({ received: true });
+  try {
+    const value = body?.entry?.[0]?.changes?.[0]?.value;
+    const message = value?.messages?.[0];
+    const from = message?.from;
+    const text = message?.text?.body;
+    if (!from || !text) return reply.code(200).send({ received: true, ignored: true });
+
+    const { session } = await getWhatsAppSession(from);
+    await db.message.create({ data: { sessionId: session.id, role: 'user', content: text } });
+
+    const answer = await generateLumiaReply(text);
+    await db.message.create({ data: { sessionId: session.id, role: 'assistant', content: answer } });
+    await sendWhatsAppText(from, answer);
+
+    return reply.code(200).send({ received: true, replied: true });
+  } catch (error) {
+    app.log.error(error);
+    return reply.code(200).send({ received: true, replied: false });
+  }
 });
 
 app.post('/api/v1/auth/register', async (request, reply) => {
