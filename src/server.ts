@@ -16,6 +16,13 @@ const gemini = env.GEMINI_API_KEY ? new GoogleGenAI({ apiKey: env.GEMINI_API_KEY
 const ExaClient = (ExaModule as any).default ?? ExaModule;
 const exa = env.EXA_API_KEY ? new ExaClient(env.EXA_API_KEY) : null;
 
+app.log.info({
+  whatsappAccessTokenConfigured: Boolean(env.WHATSAPP_ACCESS_TOKEN?.trim()),
+  whatsappPhoneNumberIdConfigured: Boolean(env.WHATSAPP_PHONE_NUMBER_ID?.trim()),
+  whatsappVerifyTokenConfigured: Boolean(env.WHATSAPP_VERIFY_TOKEN?.trim()),
+  whatsappGraphVersion: env.WHATSAPP_GRAPH_VERSION
+}, 'LUMIA environment diagnostics');
+
 type AuthUser = { id: string; email: string; role: 'CUSTOMER'|'AGENT'|'ADMIN' };
 
 async function token(user: AuthUser) {
