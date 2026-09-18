@@ -230,8 +230,33 @@ async function generateLumiaReply(message: string, history: Array<{ role: 'user'
       contents: prompt
     });
     return response.text?.trim() || 'I could not generate a response right now.';
-  } catch (error) {
-    app.log.error({ error, model: env.GEMINI_MODEL }, 'Gemini generation failed');
+  } catch (error: any) {
+    const status = error?.status ?? error?.code;
+    const messageText = error?.message ?? String(error);
+    app.log.error({ status, errorMessage: messageText, model: env.GEMINI_MODEL }, 'Gemini generation failed');
+
+    // Gemini 3.8 Flash can temporarily return 503 during capacity/service interruptions.
+    // Retry once with the stable previous Flash generation before falling back to web search.
+    if (env.GEMINI_MODEL === 'gemini-3.8-flash' && (status === 503 || /service unavailable|overloaded|temporar/i.test(messageText))) {
+      try {
+        const fallback = await gemini.models.generateContent({
+          model: 'gemini-3.7-flash',
+          contents: prompt
+        });
+        const fallbackText = fallback.text?.trim();
+        if (fallbackText) {
+          app.log.info({ model: 'gemini-3.7-flash' }, 'Gemini fallback succeeded');
+          return fallbackText;
+        }
+      } catch (fallbackError: any) {
+        app.log.error({
+          status: fallbackError?.status ?? fallbackError?.code,
+          errorMessage: fallbackError?.message ?? String(fallbackError),
+          model: 'gemini-3.7-flash'
+        }, 'Gemini fallback failed');
+      }
+    }
+
     if (needsWebSearch(message) && exa) {
       const results = await searchWeb(message);
       if (results.length) {
