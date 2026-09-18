@@ -15,6 +15,8 @@ type Request = {
   createdAt: string;
   service: { name: string };
   customer: { email: string };
+  source?: 'irembo' | 'provider';
+  details?: string | null;
 };
 
 export default function AgentRequestsPage() {
@@ -27,8 +29,14 @@ export default function AgentRequestsPage() {
     const token=localStorage.getItem('lumia_token');
     if(!token){setError('Please log in as an agent.');setLoading(false);return;}
     try{
-      const data=await api<{requests:Request[]}>('/api/v1/agent/requests',{headers:{Authorization:'Bearer '+token}});
-      setRequests(data.requests);
+      const [irembo, provider] = await Promise.all([
+        api<{requests:Request[]}>('/api/v1/agent/requests',{headers:{Authorization:'Bearer '+token}}),
+        api<{requests:Array<{id:string;status:string;customerName:string;customerPhone:string;location:string|null;details:string;createdAt:string;service:{name:string};customer:{email:string}}}>('/api/v1/provider/requests',{headers:{Authorization:'Bearer '+token}}).catch(()=>({requests:[]}))
+      ]);
+      setRequests([
+        ...irembo.requests.map(r=>({...r,source:'irembo' as const})),
+        ...provider.requests.map(r=>({...r,source:'provider' as const,description:r.details}))
+      ].sort((a,b)=>new Date(b.createdAt).getTime()-new Date(a.createdAt).getTime()));
     }catch(err){setError(err instanceof Error?err.message:'Unable to load requests.');}
     finally{setLoading(false);}
   }
@@ -40,12 +48,12 @@ export default function AgentRequestsPage() {
     if(!token) return;
     setBusy(id+status);
     try{
-      const data=await api<{request:Request}>('/api/v1/agent/requests/'+id+'/status',{
-        method:'POST',
-        headers:{Authorization:'Bearer '+token},
-        body:JSON.stringify({status})
-      });
-      setRequests(items=>items.map(item=>item.id===id?data.request:item));
+      const current=requests.find(item=>item.id===id);
+      if(!current) return;
+      const data=current.source==='provider'
+        ? await api<{request:Request}>('/api/v1/provider/requests/'+id+'/status',{method:'PATCH',headers:{Authorization:'Bearer '+token},body:JSON.stringify({status})})
+        : await api<{request:Request}>('/api/v1/agent/requests/'+id+'/status',{method:'POST',headers:{Authorization:'Bearer '+token},body:JSON.stringify({status})});
+      setRequests(items=>items.map(item=>item.id===id?{...item,...data.request,source:current.source}:item));
     }catch(err){setError(err instanceof Error?err.message:'Unable to update request.');}
     finally{setBusy('');}
   }
