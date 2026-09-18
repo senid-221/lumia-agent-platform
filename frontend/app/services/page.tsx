@@ -87,7 +87,7 @@ export default function ServicesPage() {
 
         <div className="mt-5 divide-y divide-slate-100">
           {filtered.map((service) => (
-            <Link key={service.id} href={'/services/' + slugify(service.name)} className="flex items-center justify-between gap-4 py-4 group">
+            <Link key={service.id} href={'/services/' + encodeURIComponent(service.slug)} className="flex items-center justify-between gap-4 py-4 group">
               <div>
                 <div className="text-sm font-semibold text-slate-700 group-hover:text-sky-700">{service.name}</div>
                 <div className="mt-1 text-xs text-slate-400">{service.category}{service.feeRwf != null ? ' · ' + service.feeRwf.toLocaleString() + ' RWF' : ''}{service.processingTime ? ' · ' + service.processingTime : ''}</div>
