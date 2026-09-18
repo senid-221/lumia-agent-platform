@@ -114,9 +114,6 @@ export const OFFICIAL_IREMBO_CATALOG: IremboCatalogEntry[] = [
     accountRequired: true,
     officialUrl: 'https://support.new.irembo.gov.rw/en/support/solutions/articles/47001283560-how-to-apply-for-single-digital-id-adult-self-pre-enrollment-'
   }
-];
-
-
   {
     slug: 'birth-certificate',
     name: 'Birth Certificate',
@@ -297,6 +294,151 @@ export const OFFICIAL_IREMBO_CATALOG: IremboCatalogEntry[] = [
     accountRequired: false,
     officialUrl: 'https://support.irembo.gov.rw/en/support/solutions/articles/47001302372-frequently-asked-questions-about-motor-vehicle-inspection-mvi-1st-visit-appointment'
   },
+
+  {
+    slug: 'death-certificate',
+    name: 'Death Certificate',
+    category: 'Family',
+    institution: 'Ministry of Local Government (MINALOC)',
+    description: 'Apply for an official e-certificate declaring that a person is deceased.',
+    requirements: [
+      'Deceased National ID or Child Application Number where applicable.',
+      'If the death occurred before the new National ID issuance, the ID may not be required.',
+      'Valid phone number and/or email address.'
+    ],
+    feeRwf: 0,
+    processingTime: '1 working day',
+    accountRequired: true,
+    officialUrl: 'https://support.irembo.gov.rw/en/support/solutions/articles/47001212850-how-to-apply-for-a-death-certificate'
+  },
+  {
+    slug: 'certificate-of-nationality',
+    name: 'Certificate of Nationality',
+    category: 'Identification',
+    institution: 'Ministry of Local Government (MINALOC)',
+    description: 'Apply for a certificate confirming Rwandan nationality.',
+    requirements: [
+      'National ID number or Citizen Application Number for a child.',
+      'Valid phone number, email address, or both.'
+    ],
+    feeRwf: 1500,
+    processingTime: '1 working day',
+    accountRequired: true,
+    officialUrl: 'https://support.irembo.gov.rw/en/support/solutions/articles/47001245976-how-to-apply-for-a-certificate-of-nationality'
+  },
+  {
+    slug: 'certificate-of-full-identity',
+    name: 'Certificate of Full Identity',
+    category: 'Identification',
+    institution: 'Ministry of Local Government (MINALOC)',
+    description: 'Obtain an e-certificate of full identity for official applications.',
+    requirements: [
+      'National ID number for adults.',
+      'Citizen Application Number and passport photo for children.',
+      'Valid phone number or email address.'
+    ],
+    feeRwf: 500,
+    processingTime: '1 working day',
+    accountRequired: true,
+    officialUrl: 'https://support.irembo.gov.rw/en/support/solutions/articles/47001246546-how-to-apply-for-a-certificate-of-full-identity'
+  },
+  {
+    slug: 'certificate-of-replacement-national-id',
+    name: 'Certificate of Replacement for National ID',
+    category: 'Identification',
+    institution: 'National Identification Agency (NIDA)',
+    description: 'Apply for an e-certificate related to National ID replacement.',
+    requirements: [
+      'National ID number or Citizen Application Number.',
+      'Passport photo where required.',
+      'Valid phone number and email address.'
+    ],
+    feeRwf: 3000,
+    processingTime: '1 working day',
+    accountRequired: true,
+    officialUrl: 'https://support.irembo.gov.rw/en/support/solutions/articles/47001221492-frequently-asked-questions-about-identification-services'
+  },
+  {
+    slug: 'change-of-name',
+    name: 'Change of Name',
+    category: 'Identification',
+    institution: 'Ministry of Local Government (MINALOC)',
+    description: 'Submit and confirm a legal change-of-name request through IremboGov.',
+    requirements: [
+      'National ID for adults or Child ID/Citizen Application Number for minors.',
+      'One of the accepted supporting documents listed by IremboGov.',
+      'Valid phone number, email address, or both.'
+    ],
+    feeRwf: null,
+    processingTime: '7 days for each step',
+    accountRequired: null,
+    officialUrl: 'https://support.irembo.gov.rw/en/support/solutions/articles/47001226033-how-to-apply-for-change-of-name'
+  },
+  {
+    slug: 'traffic-fines',
+    name: 'Traffic Fines',
+    category: 'Car and Motor Services',
+    institution: 'Rwanda National Police (RNP)',
+    description: 'Check and pay traffic fines using a vehicle plate number with matching TIN or a ticket number.',
+    requirements: [
+      'Plate number with the corresponding TIN, or a ticket number.',
+      'Valid phone number, email address, or both for payment application.'
+    ],
+    feeRwf: null,
+    processingTime: 'Payment is processed after a billing number is generated',
+    accountRequired: false,
+    officialUrl: 'https://support.irembo.gov.rw/en/support/solutions/articles/47001246549-how-to-check-and-pay-for-traffic-fines'
+  },
+  {
+    slug: 'motor-vehicle-technical-testing-second-visit',
+    name: 'Motor Vehicle Technical Testing Second Visit Appointment',
+    category: 'Vehicle Technical Inspection & Emission Testing',
+    institution: 'Rwanda National Police (RNP)',
+    description: 'Book a second technical inspection visit after failing the first technical inspection.',
+    requirements: [
+      'The vehicle must have been repaired.',
+      'Outstanding traffic fines must be cleared.',
+      'The second visit should be booked within 14 days of the failed first visit.'
+    ],
+    feeRwf: null,
+    processingTime: 'Appointment confirmed after successful payment',
+    accountRequired: false,
+    officialUrl: 'https://support.irembo.gov.rw/en/support/solutions/articles/47001283858-how-to-apply-for-a-motor-vehicle-technical-testing-second-visit-appointment-'
+  },
+  {
+    slug: 'motor-vehicle-emission-testing-second-visit',
+    name: 'Motor Vehicle Emission Testing Second Visit Appointment',
+    category: 'Vehicle Technical Inspection & Emission Testing',
+    institution: 'Rwanda Environment Management Authority (REMA)',
+    description: 'Book a second emission inspection visit after failing the first emission test.',
+    requirements: [
+      'The vehicle must have been repaired.',
+      'Outstanding traffic fines must be cleared.',
+      'The second visit should be booked within 14 days of the failed first visit.'
+    ],
+    feeRwf: null,
+    processingTime: 'Appointment confirmed after successful payment',
+    accountRequired: false,
+    officialUrl: 'https://support.irembo.gov.rw/en/support/solutions/articles/47001283859-how-to-apply-for-a-motor-vehicle-emission-testing-second-visit-appointment'
+  },
+  {
+    slug: 'official-gazette-publication',
+    name: 'Publish in the Official Gazette',
+    category: 'Notarization And Gazette Service',
+    institution: 'Ministry of Justice (MINIJUST)',
+    description: 'Apply to publish an approved change of name, legal personality, or other eligible publication in the Official Gazette.',
+    requirements: [
+      'National ID for Rwandan citizens or passport for foreigners.',
+      'Relevant approval/supporting document such as a change-of-name certificate or legal personality certificate.',
+      'Valid phone number, email address, or both.'
+    ],
+    feeRwf: null,
+    processingTime: '14 days',
+    accountRequired: null,
+    officialUrl: 'https://support.irembo.gov.rw/en/support/solutions/articles/47001200653-how-to-publish-in-the-official-gazette'
+  },
+];
+
 export async function ensureOfficialIremboCatalog() {
   for (const service of OFFICIAL_IREMBO_CATALOG) {
     await db.iremboService.upsert({
