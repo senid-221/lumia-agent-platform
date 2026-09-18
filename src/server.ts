@@ -85,6 +85,7 @@ async function getWhatsAppSession(phone: string) {
     user = await db.user.create({
       data: {
         email,
+        phone,
         passwordHash: await bcrypt.hash(crypto.randomUUID(), 10),
         role: 'CUSTOMER'
       }
@@ -144,6 +145,200 @@ async function generateLumiaReply(message: string, history: Array<{ role: 'user'
   return response.text?.trim() || 'I could not generate a response right now.';
 }
 
+const WHATSAPP_MENU = [
+  ['services', 'Services zose'],
+  ['irembo', 'Irembo Services'],
+  ['website', 'Website Building'],
+  ['hosting', 'Web Hosting'],
+  ['tech', 'Teaching Tech'],
+  ['prompts', 'Prompt Generation'],
+  ['design', 'Flyer & Graphic Design'],
+  ['jobs', 'Jobs for Seekers'],
+  ['agents', 'Available Irembo Agents'],
+  ['requests', 'My Requests']
+] as const;
+
+async function sendWhatsAppMenu(to: string) {
+  const body = `LUMIA AI\n\nMurakaza neza kuri LUMIA WhatsApp Agent.\n\nHitamo serivisi:\n\n1. Services zose\n2. Irembo Services\n3. Website Building\n4. Web Hosting\n5. Teaching Tech\n6. Prompt Generation\n7. Flyer & Graphic Design\n8. Jobs for Seekers\n9. Available Irembo Agents\n10. My Requests\n\nAndika nomero (urugero: 2) cyangwa izina rya service.`;
+  await sendWhatsAppText(to, body);
+}
+
+function normalizeWhatsAppCommand(text: string) {
+  return text.trim().toLowerCase()
+    .replace(/^[#*\s]+|[#*\s]+$/g, '')
+    .replace(/\s+/g, ' ');
+}
+
+async function getWhatsAppIremboServices() {
+  return db.iremboService.findMany({
+    where: { active: true },
+    orderBy: [{ category: 'asc' }, { name: 'asc' }],
+    select: { id: true, name: true, category: true, feeRwf: true, processingTime: true, requirements: true, officialUrl: true }
+  });
+}
+
+function formatRwf(value: number | null) {
+  return value == null ? 'Igiciro ntikirashyirwaho; LUMIA irakigenzura.' : `${value.toLocaleString('en-US')} RWF`;
+}
+
+async function handleWhatsAppCommand(phone: string, user: any, text: string) {
+  const command = normalizeWhatsAppCommand(text);
+
+  if (['hi','hello','muraho','mwaramutse','mwiriwe','start','menu','help'].includes(command)) {
+    await sendWhatsAppMenu(phone);
+    return true;
+  }
+
+  const menuMap: Record<string, string> = {
+    '1': 'services', 'services': 'services', 'service': 'services',
+    '2': 'irembo', 'irembo': 'irembo',
+    '3': 'website', 'website': 'website', 'website building': 'website',
+    '4': 'hosting', 'hosting': 'hosting', 'web hosting': 'hosting',
+    '5': 'tech', 'teaching tech': 'tech',
+    '6': 'prompts', 'prompt': 'prompts', 'prompt generation': 'prompts',
+    '7': 'design', 'flyer': 'design', 'graphic design': 'design',
+    '8': 'jobs', 'job': 'jobs', 'jobs for seekers': 'jobs',
+    '9': 'agents', 'available agents': 'agents',
+    '10': 'requests', 'my requests': 'requests'
+  };
+
+  const selected = menuMap[command];
+
+  if (selected === 'services') {
+    await sendWhatsAppText(phone, `LUMIA SERVICES\n\n1. Building website\n2. Web hosting\n3. Teaching tech\n4. Prompt generation\n5. Flyer & graphic design\n6. Irembo agent connect\n7. Jobs for seekers\n8. Donations & community support\n9. NESA exam study support\n10. AI research\n11. Website & app development\n12. Digital business support\n\nAndika service ushaka. LUMIA izagufasha gutangira.`);
+    return true;
+  }
+
+  if (selected === 'irembo') {
+    const services = await getWhatsAppIremboServices();
+    const groups = new Map<string, string[]>();
+    for (const service of services) {
+      const current = groups.get(service.category) || [];
+      if (current.length < 12) current.push(service.name);
+      groups.set(service.category, current);
+    }
+    const lines = Array.from(groups.entries()).slice(0, 18).map(([category, items]) =>
+      `* ${category}\n${items.map((name, i) => `${i + 1}. ${name}`).join('\n')}`
+    );
+    await sendWhatsAppText(phone, `IREMBO SERVICES\n\n${lines.join('\n\n')}\n\nAndika izina rya service ushaka. LUMIA izakwereka ibisabwa, igiciro, igihe n'abakozi ba Available Agents.`);
+    return true;
+  }
+
+  if (selected === 'agents') {
+    const agents = await db.iremboAgent.findMany({
+      where: { status: 'ACTIVE', verificationStatus: 'VERIFIED' },
+      take: 10,
+      orderBy: { updatedAt: 'desc' }
+    });
+    if (!agents.length) {
+      await sendWhatsAppText(phone, 'Nta Available Irembo Agents bari muri LUMIA ubu. Gerageza nyuma.');
+    } else {
+      await sendWhatsAppText(phone, `AVAILABLE IREMBO AGENTS\n\n${agents.map((a, i) => `${i+1}. ${a.displayName}\n📍 ${a.location}\n📞 ${a.phone}\nServices: ${a.serviceAreas.slice(0,4).join(', ')}`).join('\n\n')}\n\nAndika izina rya service niba ushaka agent uyihuza na yo.`);
+    }
+    return true;
+  }
+
+  if (selected === 'requests') {
+    const requests = await db.serviceRequest.findMany({
+      where: { customerId: user.id },
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+      include: { service: true, agent: true }
+    });
+    if (!requests.length) {
+      await sendWhatsAppText(phone, 'Nta requests ufite muri LUMIA ubu.');
+    } else {
+      await sendWhatsAppText(phone, `MY REQUESTS\n\n${requests.map((r, i) => `${i+1}. ${r.service.name}\nStatus: ${r.status}\nAgent: ${r.agent?.displayName || 'Not assigned'}`).join('\n\n')}`);
+    }
+    return true;
+  }
+
+  if (selected === 'website' || selected === 'hosting' || selected === 'tech' || selected === 'prompts' || selected === 'design' || selected === 'jobs') {
+    const prompts: Record<string, string> = {
+      website: 'Nshaka Website Building. Nsobanurira amahitamo, igiciro, ibyo nkeneye nuko watangira project.',
+      hosting: 'Nshaka Web Hosting. Mpa plans, ibiciro, domain/hosting setup nintambwe zo gutangira.',
+      tech: 'Nshaka Teaching Tech. Mpa gahunda yo kwiga coding, AI, web development cyangwa digital skills.',
+      prompts: 'Nshaka Prompt Generation. Mfashe gukora prompt nziza ijyanye n’akazi kanjye.',
+      design: 'Nshaka Flyer & Graphic Design. Mfashe gutegura design yanjye n’ibisabwa.',
+      jobs: 'Nshaka Jobs for Seekers. Mfashe gushaka opportunities no gutegura application.'
+    };
+    await sendWhatsAppText(phone, 'LUMIA SERVICE SELECTED\n\n' + prompts[selected] + '\n\nAndika ibisobanuro birambuye byibyo ushaka.');
+    return true;
+  }
+
+  const services = await getWhatsAppIremboServices();
+  const matched = services.find(s => s.name.toLowerCase() === command || s.name.toLowerCase().includes(command) || command.includes(s.name.toLowerCase()));
+  if (matched) {
+    const requirements = matched.requirements
+      ? JSON.stringify(matched.requirements).replace(/[{}"[\]]/g, '').slice(0, 1800)
+      : 'Ibisabwa bizagenzurwa na LUMIA.';
+    await sendWhatsAppText(phone,
+      `IREMBO SERVICE\n\n${matched.name}\nCategory: ${matched.category}\nIgiciro: ${formatRwf(matched.feeRwf)}\nIgihe: ${matched.processingTime || 'LUMIA irakigenzura.'}\n\nIBISABWA:\n${requirements}\n\nNiba ushaka gukomeza, andika:\nAPPLY ${matched.name}\n\nLUMIA izagushakira Available Agents ikagufasha gutangira request.`
+    );
+    return true;
+  }
+
+  if (/^apply\s+/i.test(command)) {
+    const serviceName = command.replace(/^apply\s+/i, '').trim();
+    const matched = services.find(s => s.name.toLowerCase() === serviceName || s.name.toLowerCase().includes(serviceName));
+    if (!matched) {
+      await sendWhatsAppText(phone, 'Sinabonye iyo Irembo service. Andika Services cyangwa Irembo Services maze uhitemo service iri muri catalog.');
+      return true;
+    }
+    const agents = await db.iremboAgent.findMany({
+      where: { status: 'ACTIVE', verificationStatus: 'VERIFIED', serviceAreas: { has: matched.name } },
+      take: 10
+    });
+    if (!agents.length) {
+      await sendWhatsAppText(phone, `Nta verified agent wihariye kuri ${matched.name} uri muri LUMIA ubu. Ndakugira inama yo kugerageza Available Agents nyuma.`);
+      return true;
+    }
+    await sendWhatsAppText(phone, `AVAILABLE AGENTS FOR ${matched.name}\n\n${agents.map((a, i) => `${i+1}. ${a.displayName}\n📍 ${a.location}\n📞 ${a.phone}`).join('\n\n')}\n\nAndika AGENT 1, AGENT 2, etc. kugirango uhitemo agent.`);
+    return true;
+  }
+
+  const agentMatch = command.match(/^agent\s+(\d+)$/i);
+  if (agentMatch) {
+    const index = Number(agentMatch[1]) - 1;
+    const agents = await db.iremboAgent.findMany({ where: { status: 'ACTIVE', verificationStatus: 'VERIFIED' }, take: 10, orderBy: { updatedAt: 'desc' } });
+    const agent = agents[index];
+    if (!agent) {
+      await sendWhatsAppText(phone, 'Agent ntabonetse. Andika Available Agents kugirango mbibagaragarize.');
+      return true;
+    }
+    const activeService = await db.iremboService.findFirst({ where: { active: true }, orderBy: { updatedAt: 'desc' } });
+    if (!activeService) {
+      await sendWhatsAppText(phone, 'Nta service iboneka muri catalog ubu.');
+      return true;
+    }
+    const customer = await db.user.findUnique({ where: { id: user.id } });
+    const phoneNumber = customer?.phone || phone;
+    const request = await db.serviceRequest.create({
+      data: {
+        customerId: user.id,
+        serviceId: activeService.id,
+        customerName: phone,
+        customerPhone: phoneNumber,
+        description: 'Irembo request started from Lumia WhatsApp Agent',
+        status: 'PENDING'
+      }
+    });
+    await db.notification.create({
+      data: {
+        userId: agent.userId,
+        type: 'IREMBO_SERVICE_REQUEST',
+        title: 'New WhatsApp Irembo request',
+        body: `Customer ${phone} requested ${activeService.name}. Phone: ${phoneNumber}.`
+      }
+    });
+    await notifyWhatsApp(agent.phone, `LUMIA IREMBO REQUEST\n\nNew customer request: ${activeService.name}\nCustomer: ${phone}\nPhone: ${phoneNumber}\n\nOpen Agent Workspace to manage it.`);
+    await sendWhatsAppText(phone, `Request yawe yakiriwe. ${agent.displayName} azafasha kuri ${activeService.name}.\n\nStatus: PENDING\nLUMIA izakumenyesha uko bihagaze.`);
+    return true;
+  }
+
+  return false;
+}
+
 app.get('/api/v1/whatsapp/webhook', async (request, reply) => {
   const q = z.object({ 'hub.mode': z.string().optional(), 'hub.verify_token': z.string().optional(), 'hub.challenge': z.string().optional() }).parse(request.query);
   if (q['hub.mode'] !== 'subscribe' || !env.WHATSAPP_VERIFY_TOKEN || q['hub.verify_token'] !== env.WHATSAPP_VERIFY_TOKEN) return reply.code(403).send({ error: 'Webhook verification failed' });
@@ -201,14 +396,24 @@ app.post('/api/v1/whatsapp/webhook', async (request, reply) => {
     const text = message?.text?.body;
     if (!from || !text) return reply.code(200).send({ received: true, ignored: true });
 
-    const { session } = await getWhatsAppSession(from);
+    const { session, user } = await getWhatsAppSession(from);
     await db.message.create({ data: { sessionId: session.id, role: 'user', content: text } });
 
-    const answer = await generateLumiaReply(text);
+    const handled = await handleWhatsAppCommand(from, user, text);
+    if (handled) {
+      return reply.code(200).send({ received: true, replied: true, mode: 'service-menu' });
+    }
+
+    const answer = await generateLumiaReply(text, await db.message.findMany({
+      where: { sessionId: session.id },
+      orderBy: { createdAt: 'desc' },
+      take: 12,
+      select: { role: true, content: true }
+    }).then(items => items.reverse() as Array<{ role: 'user'|'assistant'; content: string }>));
     await db.message.create({ data: { sessionId: session.id, role: 'assistant', content: answer } });
     await sendWhatsAppText(from, answer);
 
-    return reply.code(200).send({ received: true, replied: true });
+    return reply.code(200).send({ received: true, replied: true, mode: 'ai' });
   } catch (error) {
     app.log.error(error);
     return reply.code(200).send({ received: true, replied: false });
