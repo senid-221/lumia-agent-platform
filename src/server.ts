@@ -158,14 +158,15 @@ async function generateLumiaReply(message: string, history: Array<{ role: 'user'
     return response.text?.trim() || 'I could not generate a response right now.';
   } catch (error) {
     app.log.error({ error, model: env.GEMINI_MODEL }, 'Gemini generation failed');
-    if (exa) {
+    if (needsWebSearch(message) && exa) {
       const results = await searchWeb(message);
       if (results.length) {
-        return 'Nabonye ikibazo kuri AI model. Dore amakuru nabonye kuri web:\n\n' +
-          results.map((r: any, i: number) => `${i + 1}. ${r.title}\n${r.url}\n${r.text}`).join('\n\n');
+        return 'Dore amakuru agezweho nabonye ku rubuga:\n\n' +
+          results.map((r: any, i: number) => `${i + 1}. ${r.title}\n${r.text}`).join('\n\n') +
+          '\n\nInkomoko: web search.';
       }
     }
-    return 'LUMIA ntishoboye gusubiza ubu kubera ikibazo cya AI service. Ongera ugerageze nyuma gato.';
+    return 'LUMIA AI service iri gusubirwamo. Ongera ugerageze nyuma gato.';
   }
 }
 
