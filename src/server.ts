@@ -313,6 +313,29 @@ function normalizeWhatsAppCommand(text: string) {
     .replace(/\s+/g, ' ');
 }
 
+async function getAvailableTeachers(technology?: string, location?: string) {
+  const teachers = await db.teacher.findMany({
+    where: {
+      status: 'ACTIVE',
+      verificationStatus: 'VERIFIED',
+      ...(location ? { location: { contains: location, mode: 'insensitive' } } : {})
+    },
+    orderBy: { updatedAt: 'desc' },
+    take: 20
+  });
+  return technology
+    ? teachers.filter((teacher) =>
+        teacher.technologies.some((item) => item.toLowerCase().includes(technology.toLowerCase()))
+      )
+    : teachers;
+}
+
+function formatTeacherList(teachers: any[]) {
+  return teachers.map((teacher, index) =>
+    `${index + 1}. ${teacher.displayName}\n📚 ${teacher.technologies.join(', ')}\n📍 ${teacher.location}`
+  ).join('\n\n');
+}
+
 async function getWhatsAppIremboServices() {
   return db.iremboService.findMany({
     where: { active: true },
@@ -543,16 +566,54 @@ async function handleWhatsAppCommand(phone: string, user: any, text: string) {
     return true;
   }
 
-  if (selected === 'website' || selected === 'hosting' || selected === 'tech' || selected === 'prompts' || selected === 'design' || selected === 'jobs') {
+  if (selected === 'tech') {
+    const teachers = await getAvailableTeachers();
+    if (!teachers.length) {
+      await sendWhatsAppText(phone, 'Nta Teacher verified uri available ubu. Ongera ugerageze nyuma.');
+      return true;
+    }
+    const technologies = [...new Set(teachers.flatMap((teacher) => teacher.technologies))].slice(0, 20);
+    await sendWhatsAppText(phone,
+      `TEACHING TECH\n\nTechnologies ushobora kwiga:\n${technologies.map((item, i) => `${i + 1}. ${item}`).join('\n')}\n\nAndika technology ushaka, urugero: Python, JavaScript cyangwa AI. LUMIA izakwereka Teachers available.`
+    );
+    return true;
+  }
+
+  if (selected === 'website' || selected === 'hosting' || selected === 'prompts' || selected === 'design' || selected === 'jobs') {
     const prompts: Record<string, string> = {
       website: 'Nshaka Website Building. Nsobanurira amahitamo, igiciro, ibyo nkeneye nuko watangira project.',
       hosting: 'Nshaka Web Hosting. Mpa plans, ibiciro, domain/hosting setup nintambwe zo gutangira.',
-      tech: 'Nshaka Teaching Tech. Mpa gahunda yo kwiga coding, AI, web development cyangwa digital skills.',
       prompts: 'Nshaka Prompt Generation. Mfashe gukora prompt nziza ijyanye n’akazi kanjye.',
       design: 'Nshaka Flyer & Graphic Design. Mfashe gutegura design yanjye n’ibisabwa.',
       jobs: 'Nshaka Jobs for Seekers. Mfashe gushaka opportunities no gutegura application.'
     };
     await sendWhatsAppText(phone, 'LUMIA SERVICE SELECTED\n\n' + prompts[selected] + '\n\nAndika ibisobanuro birambuye byibyo ushaka.');
+    return true;
+  }
+
+  const teachers = await getAvailableTeachers();
+  const teacherTechnology = teachers.find((teacher) =>
+    teacher.technologies.some((item) =>
+      item.toLowerCase() === command || item.toLowerCase().includes(command) || command.includes(item.toLowerCase())
+    )
+  );
+
+  if (teacherTechnology || (teachers.length && /^(learn|kwiga|teach|teacher)\\s+/i.test(command))) {
+    const requestedTechnology = command.replace(/^(learn|kwiga|teach|teacher)\\s+/i, '').trim();
+    const matchingTeachers = requestedTechnology
+      ? await getAvailableTeachers(requestedTechnology)
+      : teachers;
+    if (!matchingTeachers.length) {
+      await sendWhatsAppText(phone, 'Nta Teacher verified uboneka kuri iyo technology ubu.');
+      return true;
+    }
+    await sendWhatsAppText(phone,
+      `AVAILABLE TEACHERS\\n\\n${formatTeacherList(matchingTeachers.slice(0, 8))}\\n\\nAndika TEACHER 1 kugirango uhitemo Teacher.`
+    );
+    await db.session.update({
+      where: { id: session.id },
+      data: { title: `WhatsApp chat | TEACHER_TECHNOLOGY=${requestedTechnology || teacherTechnology?.technologies[0] || 'Technology'}` }
+    });
     return true;
   }
 
@@ -740,6 +801,91 @@ app.post('/api/v1/auth/login', async (request, reply) => {
   const user = await db.user.findUnique({ where: { email: body.email.toLowerCase() } });
   if (!user || !(await bcrypt.compare(body.password, user.passwordHash))) return reply.code(401).send({ error: 'Invalid email or password' });
   return { token: await token({ id: user.id, email: user.email, role: user.role }), user: { id: user.id, email: user.email, phone: user.phone, role: user.role } };
+});
+
+app.get('/api/v1/teachers', async (request) => {
+  const q = z.object({ technology: z.string().optional(), location: z.string().optional() }).parse(request.query);
+  const teachers = await getAvailableTeachers(q.technology, q.location);
+  return {
+    teachers: teachers.map(({ userId, ...teacher }) => teacher)
+  };
+});
+
+app.post('/api/v1/teachers/register', async (request, reply) => {
+  const user = await auth(request, reply); if (!user) return;
+  const body = z.object({
+    displayName: z.string().min(2),
+    phone: z.string().min(8),
+    location: z.string().min(2),
+    technologies: z.array(z.string().min(1)).min(1),
+    bio: z.string().max(1000).optional()
+  }).parse(request.body);
+
+  const teacher = await db.teacher.upsert({
+    where: { userId: user.id },
+    update: body,
+    create: { ...body, userId: user.id }
+  });
+
+  await db.user.update({
+    where: { id: user.id },
+    data: { role: 'TEACHER', phone: body.phone }
+  });
+
+  return { teacher };
+});
+
+app.post('/api/v1/teachers/:id/requests', async (request, reply) => {
+  const user = await auth(request, reply); if (!user) return;
+  const { id } = z.object({ id: z.string() }).parse(request.params);
+  const body = z.object({
+    technology: z.string().min(1),
+    customerName: z.string().min(2),
+    customerPhone: z.string().regex(/^\\+?[0-9]{8,15}$/),
+    description: z.string().max(2000).optional(),
+    location: z.string().max(200).optional()
+  }).parse(request.body);
+
+  const teacher = await db.teacher.findFirst({
+    where: { id, status: 'ACTIVE', verificationStatus: 'VERIFIED' }
+  });
+  if (!teacher) return reply.code(404).send({ error: 'Teacher not available' });
+
+  const supportsTechnology = teacher.technologies.some((item) =>
+    item.toLowerCase().includes(body.technology.toLowerCase())
+  );
+  if (!supportsTechnology) return reply.code(400).send({ error: 'Teacher does not teach this technology' });
+
+  const requestRow = await db.teacherRequest.create({
+    data: {
+      ...body,
+      teacherId: teacher.id,
+      customerId: user.id,
+      status: 'PENDING'
+    }
+  });
+
+  await db.notification.create({
+    data: {
+      userId: teacher.userId,
+      type: 'TEACHER_SERVICE_REQUEST',
+      title: 'New teaching request',
+      body: `Customer ${body.customerName} wants to learn ${body.technology}. Phone: ${body.customerPhone}.`
+    }
+  });
+
+  const customer = await db.user.findUnique({ where: { id: user.id } });
+  const customerWaPhone = customer?.phone ?? (customer?.email.startsWith('wa-') ? customer.email.slice(3).split('@')[0] : null);
+  await notifyWhatsApp(teacher.phone,
+    `LUMIA TEACHING REQUEST\\n\\nTechnology: ${body.technology}\\nCustomer: ${body.customerName}\\nPhone: ${body.customerPhone}\\nLocation: ${body.location || 'Not provided'}`
+  );
+  if (customerWaPhone) {
+    await notifyWhatsApp(customerWaPhone,
+      `LUMIA TEACHING\\n\\nTeacher: ${teacher.displayName}\\nTechnology: ${body.technology}\\nStatus: PENDING`
+    );
+  }
+
+  return { requestId: requestRow.id, status: requestRow.status };
 });
 
 app.get('/api/v1/irembo/services', async () => ({ services: await db.iremboService.findMany({ where: { active: true }, orderBy: [{ category: 'asc' }, { name: 'asc' }] }) }));
