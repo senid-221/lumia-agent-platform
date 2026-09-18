@@ -21,7 +21,7 @@ app.log.info({
   whatsappGraphVersion: env.WHATSAPP_GRAPH_VERSION
 }, 'LUMIA environment diagnostics');
 
-type AuthUser = { id: string; email: string; role: 'CUSTOMER'|'AGENT'|'ADMIN' };
+type AuthUser = { id: string; email: string; role: 'CUSTOMER'|'AGENT'|'TEACHER'|'ADMIN' };
 
 async function token(user: AuthUser) {
   return new SignJWT({ email: user.email, role: user.role })
