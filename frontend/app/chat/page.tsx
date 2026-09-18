@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Suspense, useState } from 'react';
-import { ArrowUp, Bot, Check, ChevronDown, FileText, Globe2, Image as ImageIcon, MapPin, Menu, MessageCircle, Music2, Paperclip, Plus, Search, Users, X } from 'lucide-react';
+import { ArrowUp, Bot, Check, ChevronDown, FileText, Globe2, Image as ImageIcon, MapPin, Menu, MessageCircle, Music2, Paperclip, Plus, Search, Users, X, Sparkles } from 'lucide-react';
 import { api } from '../../lib/api';
 import { useSearchParams } from 'next/navigation';
 
@@ -127,6 +127,7 @@ function ChatPageContent() {
             <div className="flex items-center gap-3 rounded-xl bg-white/[.06] px-3 py-2.5 text-white"><MessageCircle size={15}/> Chat</div>
             <Link href="/services" onClick={() => setSidebarOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-slate-500 hover:bg-white/[.04] hover:text-slate-200"><Globe2 size={15}/> Irembo</Link>
             <Link href="/agents" onClick={() => setSidebarOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-slate-500 hover:bg-white/[.04] hover:text-slate-200"><Users size={15}/> Agents</Link>
+            <Link href="/builder" onClick={() => setSidebarOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-slate-500 hover:bg-white/[.04] hover:text-slate-200"><Sparkles size={15}/> Website Builder</Link>
           </nav>
 
           <div className="mt-6 border-t border-white/5 pt-4">
@@ -143,7 +144,7 @@ function ChatPageContent() {
 
           <div className="mt-auto rounded-2xl border border-white/5 bg-[#202024] p-3">
             <div className="text-xs font-semibold text-slate-200">LUMIA Workspace</div>
-            <div className="mt-1 text-[11px] leading-5 text-slate-500">Gemini + Exa connected through your backend.</div>
+            <div className="mt-1 text-[11px] leading-5 text-slate-500">Groq + Exa power your LUMIA workspace.</div>
             <Link href="/dashboard" className="mt-3 inline-flex text-xs text-violet-300">Dashboard →</Link>
           </div>
         </div>
@@ -232,7 +233,7 @@ function ChatPageContent() {
                   <button type="button" className="grid h-8 w-8 place-items-center rounded-lg hover:bg-white/5"><Paperclip size={14}/></button>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="hidden items-center gap-1 text-xs text-slate-500 sm:flex">Gemini <ChevronDown size={13}/></div>
+                  <div className="hidden items-center gap-1 text-xs text-slate-500 sm:flex">LUMIA AI <ChevronDown size={13}/></div>
                   <button aria-label="Send" type="submit" disabled={!message.trim() || loading} className="grid h-9 w-9 place-items-center rounded-xl bg-violet-500 text-white shadow-lg shadow-violet-500/20 disabled:opacity-30"><ArrowUp size={16}/></button>
                 </div>
               </div>
