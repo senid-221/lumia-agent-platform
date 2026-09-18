@@ -6,12 +6,14 @@ import bcrypt from 'bcryptjs';
 import { SignJWT, jwtVerify } from 'jose';
 import { z } from 'zod';
 import OpenAI from 'openai';
+import Exa from 'exa-js';
 import { env } from './config.js';
 import { db } from './db.js';
 
 const app = Fastify({ logger: true });
 const secret = new TextEncoder().encode(env.JWT_SECRET);
 const openai = env.OPENAI_API_KEY ? new OpenAI({ apiKey: env.OPENAI_API_KEY }) : null;
+const exa = env.EXA_API_KEY ? new Exa(env.EXA_API_KEY) : null;
 
 type AuthUser = { id: string; email: string; role: 'CUSTOMER'|'AGENT'|'ADMIN' };
 
@@ -85,13 +87,37 @@ async function getWhatsAppSession(phone: string) {
   return { user, session };
 }
 
+async function searchWeb(query: string) {
+  if (!exa) return [];
+  const response = await exa.search(query, { numResults: 5, type: 'auto', highlights: true });
+  return response.results.map((r: any) => ({
+    title: r.title,
+    url: r.url,
+    publishedDate: r.publishedDate,
+    text: r.highlights?.join('\n')?.slice(0, 2500) || ''
+  }));
+}
+
+function needsWebSearch(message: string) {
+  return /latest|today|now|current|recent|price|cost|news|2026|available|requirement|requirements|official|iremb|job|jobs|opportunit|website|who is|what is/i.test(message);
+}
+
 async function generateLumiaReply(message: string) {
   if (!openai) return 'LUMIA is temporarily unavailable. Please try again later.';
+  let webContext = '';
+  if (exa && needsWebSearch(message)) {
+    const results = await searchWeb(message);
+    if (results.length) {
+      webContext = '\n\nWEB SOURCES FROM EXA:\n' + results.map((r: any, index: number) =>
+        '[' + (index + 1) + '] ' + r.title + '\n' + r.url + '\n' + r.text
+      ).join('\n\n');
+    }
+  }
   const completion = await openai.chat.completions.create({
     model: env.OPENAI_MODEL,
     messages: [
-      { role: 'system', content: 'You are LUMIA, an AI assistant for the LUMIA Agent Platform. Be concise, helpful, and factual. For Irembo-specific requirements, direct users to official Irembo sources when current verification is needed.' },
-      { role: 'user', content: message }
+      { role: 'system', content: 'You are LUMIA, an AI assistant for the LUMIA Agent Platform. Be concise, helpful, and factual. When web context is provided, use it for current claims and include source URLs naturally. For Irembo-specific requirements or fees, prefer official Irembo sources and make uncertainty clear.' },
+      { role: 'user', content: message + webContext }
     ]
   });
   return completion.choices[0]?.message?.content?.trim() || 'I could not generate a response right now.';
