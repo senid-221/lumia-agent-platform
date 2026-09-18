@@ -1,14 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { ArrowUp, Bot, Check, ChevronDown, FileText, Globe2, Image as ImageIcon, MapPin, Menu, MessageCircle, Music2, Paperclip, Plus, Search, Sparkles, Users, X } from 'lucide-react';
 import { api } from '../../lib/api';
 import { useSearchParams } from 'next/navigation';
 
 type ChatMessage = { role: 'user' | 'assistant'; content: string };
 
-export default function ChatPage() {
+function ChatPageContent() {
   const searchParams = useSearchParams();
   const service = searchParams.get('service') || '';
   const [message, setMessage] = useState('');
@@ -242,5 +242,14 @@ export default function ChatPage() {
         </form>
       </section>
     </main>
+  );
+}
+
+
+export default function ChatPage() {
+  return (
+    <Suspense fallback={<main className="flex h-screen items-center justify-center bg-[#17171a] text-slate-300">Loading LUMIA…</main>}>
+      <ChatPageContent />
+    </Suspense>
   );
 }
