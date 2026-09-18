@@ -122,6 +122,8 @@ async function generateLumiaReply(message: string, history: Array<{ role: 'user'
     '',
     'CONVERSATION HISTORY:',
     ...history.slice(-12).map((item) => `${item.role.toUpperCase()}: ${item.content}`),
+    'CONVERSATION HISTORY:',
+    ...history.slice(-12).map((item) => `${item.role.toUpperCase()}: ${item.content}`),
     'USER:',
     message,
     webContext
