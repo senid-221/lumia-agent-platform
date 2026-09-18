@@ -1376,6 +1376,16 @@ app.get('/api/v1/admin/overview', async (request, reply) => {
   return { counts: { customers, agents, teachers, partners, products, orders, requests, messages } };
 });
 
+app.get('/api/v1/admin/agents', async (request, reply) => {
+  const user = await auth(request, reply); if (!user || !requireAdmin(user, reply)) return;
+  return { agents: await db.iremboAgent.findMany({ orderBy: { createdAt: 'desc' }, include: { user: { select: { email: true, phone: true } }, _count: { select: { requests: true } } } }) };
+});
+
+app.get('/api/v1/admin/teachers', async (request, reply) => {
+  const user = await auth(request, reply); if (!user || !requireAdmin(user, reply)) return;
+  return { teachers: await db.teacher.findMany({ orderBy: { createdAt: 'desc' }, include: { user: { select: { email: true, phone: true } }, _count: { select: { requests: true } } } }) };
+});
+
 app.get('/api/v1/admin/partners', async (request, reply) => {
   const user = await auth(request, reply); if (!user || !requireAdmin(user, reply)) return;
   return { partners: await db.partner.findMany({ orderBy: { createdAt: 'desc' }, include: { user: { select: { email: true, phone: true } }, _count: { select: { products: true, orders: true } } } }) };
