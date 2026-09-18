@@ -79,8 +79,13 @@ async function notifyWhatsApp(phone: string | null | undefined, body: string) {
 }
 
 async function getWhatsAppSession(phone: string) {
-  const email = `wa-${phone.replace(/\D/g, '')}@whatsapp.lumia.local`;
-  let user = await db.user.findUnique({ where: { email } });
+  const normalizedPhone = phone.replace(/\D/g, '');
+  const email = `wa-${normalizedPhone}@whatsapp.lumia.local`;
+
+  let user = await db.user.findUnique({ where: { phone } });
+  if (!user) user = await db.user.findUnique({ where: { phone: normalizedPhone } });
+  if (!user) user = await db.user.findUnique({ where: { email } });
+
   if (!user) {
     user = await db.user.create({
       data: {
@@ -90,11 +95,19 @@ async function getWhatsAppSession(phone: string) {
         role: 'CUSTOMER'
       }
     });
+  } else if (!user.phone) {
+    user = await db.user.update({ where: { id: user.id }, data: { phone } });
   }
-  let session = await db.session.findFirst({ where: { userId: user.id }, orderBy: { updatedAt: 'desc' } });
+
+  let session = await db.session.findFirst({
+    where: { userId: user.id },
+    orderBy: { updatedAt: 'desc' }
+  });
+
   if (!session) {
     session = await db.session.create({ data: { userId: user.id, title: 'WhatsApp chat' } });
   }
+
   return { user, session };
 }
 
@@ -293,6 +306,10 @@ async function handleWhatsAppCommand(phone: string, user: any, text: string) {
       await sendWhatsAppText(phone, `Nta verified agent wihariye kuri ${matched.name} uri muri LUMIA ubu. Ndakugira inama yo kugerageza Available Agents nyuma.`);
       return true;
     }
+    await db.session.update({
+      where: { id: (await getWhatsAppSession(phone)).session.id },
+      data: { title: `WhatsApp chat | IREMBO_SERVICE_ID=${matched.id} | IREMBO_SERVICE=${matched.name}` }
+    });
     await sendWhatsAppText(phone, `AVAILABLE AGENTS FOR ${matched.name}\n\n${agents.map((a, i) => `${i+1}. ${a.displayName}\n📍 ${a.location}\n📞 ${a.phone}`).join('\n\n')}\n\nAndika AGENT 1, AGENT 2, etc. kugirango uhitemo agent.`);
     return true;
   }
@@ -300,42 +317,78 @@ async function handleWhatsAppCommand(phone: string, user: any, text: string) {
   const agentMatch = command.match(/^agent\s+(\d+)$/i);
   if (agentMatch) {
     const index = Number(agentMatch[1]) - 1;
-    const agents = await db.iremboAgent.findMany({ where: { status: 'ACTIVE', verificationStatus: 'VERIFIED' }, take: 10, orderBy: { updatedAt: 'desc' } });
+    const session = (await getWhatsAppSession(phone)).session;
+    const serviceId = session.title?.match(/IREMBO_SERVICE_ID=([^|]+)/)?.[1] || null;
+    const serviceName = session.title?.match(/IREMBO_SERVICE=([^|]+)/)?.[1] || null;
+
+    if (!serviceId) {
+      await sendWhatsAppText(phone, 'Banza uhitemo Irembo service hanyuma wandike APPLY [service].');
+      return true;
+    }
+
+    const agents = await db.iremboAgent.findMany({
+      where: { status: 'ACTIVE', verificationStatus: 'VERIFIED', serviceAreas: { has: serviceName || '' } },
+      take: 10,
+      orderBy: { updatedAt: 'desc' }
+    });
     const agent = agents[index];
+
     if (!agent) {
-      await sendWhatsAppText(phone, 'Agent ntabonetse. Andika Available Agents kugirango mbibagaragarize.');
+      await sendWhatsAppText(phone, 'Iyo agent ntabonetse kuri iyo service. Andika APPLY [service] kongera kubona Available Agents.');
       return true;
     }
-    const activeService = await db.iremboService.findFirst({ where: { active: true }, orderBy: { updatedAt: 'desc' } });
-    if (!activeService) {
-      await sendWhatsAppText(phone, 'Nta service iboneka muri catalog ubu.');
+
+    const service = await db.iremboService.findUnique({ where: { id: serviceId } });
+    if (!service) {
+      await sendWhatsAppText(phone, 'Iyo service ntikiboneka muri LUMIA catalog.');
       return true;
     }
+
     const customer = await db.user.findUnique({ where: { id: user.id } });
     const phoneNumber = customer?.phone || phone;
+
     const request = await db.serviceRequest.create({
       data: {
         customerId: user.id,
-        serviceId: activeService.id,
-        customerName: phone,
+        serviceId: service.id,
+        customerName: customer?.email?.startsWith('wa-') ? phone : customer?.email?.split('@')[0] || phone,
         customerPhone: phoneNumber,
-        description: 'Irembo request started from Lumia WhatsApp Agent',
-        status: 'PENDING'
+        description: 'Irembo request started from LUMIA WhatsApp Agent',
+        status: 'MATCHED',
+        agentId: agent.id
       }
     });
+
     await db.notification.create({
       data: {
         userId: agent.userId,
         type: 'IREMBO_SERVICE_REQUEST',
         title: 'New WhatsApp Irembo request',
-        body: `Customer ${phone} requested ${activeService.name}. Phone: ${phoneNumber}.`
+        body: `Customer requested ${service.name}. Phone: ${phoneNumber}.`
       }
     });
-    await notifyWhatsApp(agent.phone, `LUMIA IREMBO REQUEST\n\nNew customer request: ${activeService.name}\nCustomer: ${phone}\nPhone: ${phoneNumber}\n\nOpen Agent Workspace to manage it.`);
-    await sendWhatsAppText(phone, `Request yawe yakiriwe. ${agent.displayName} azafasha kuri ${activeService.name}.\n\nStatus: PENDING\nLUMIA izakumenyesha uko bihagaze.`);
+
+    await db.notification.create({
+      data: {
+        userId: user.id,
+        type: 'IREMBO_AGENT_MATCHED',
+        title: 'Agent selected',
+        body: `${agent.displayName} will help you with ${service.name}.`
+      }
+    });
+
+    await notifyWhatsApp(
+      agent.phone,
+      `LUMIA IREMBO REQUEST\n\nService: ${service.name}\nCustomer: ${customer?.email?.startsWith('wa-') ? phone : customer?.email?.split('@')[0] || phone}\nPhone: ${phoneNumber}\nLocation: Not provided\n\nOpen your LUMIA Agent Workspace to accept/manage the request.`
+    );
+
+    await sendWhatsAppText(
+      phone,
+      `Request yawe yakiriwe.\n\nService: ${service.name}\nAgent: ${agent.displayName}\nStatus: MATCHED\n\nLUMIA izakumenyesha igihe agent ahinduye status.`
+    );
+
     return true;
   }
-
   return false;
 }
 
