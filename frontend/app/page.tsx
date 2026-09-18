@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowRight, Bot, Code2, Globe2, Landmark, Network, Search, Sparkles, Zap } from 'lucide-react';
+import { ArrowRight, Bot, Code2, Globe2, Landmark, Network, Search, Zap } from 'lucide-react';
 
 const features = [
   { icon: Bot, title: 'AI Agent Workspace', text: 'Chat, reason, plan, code, and execute from one place.' },
@@ -22,13 +22,13 @@ export default function HomePage() {
       <header className="sticky top-0 z-30 border-b border-violet-100/80 bg-white/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 lg:px-8">
           <Link href="/" className="flex items-center gap-3">
-            <div className="grid h-9 w-9 place-items-center rounded-xl bg-slate-950 text-white shadow-lg shadow-violet-200"><Sparkles size={16}/></div>
+            <div className="grid h-9 w-9 place-items-center rounded-xl bg-slate-950 text-white shadow-lg shadow-violet-200" aria-label="LUMIA logo">L</div>
             <div>
               <div className="text-sm font-semibold tracking-[0.16em]">LUMIA</div>
               <div className="text-[10px] font-medium text-slate-400">AGENT PLATFORM</div>
             </div>
           </Link>
-          <nav className="hidden items-center gap-7 text-sm text-slate-500 md:flex">
+          <nav className="hidden items-center gap-3 text-sm text-slate-500 md:flex">
             <Link href="/chat" className="hover:text-slate-950">AI Workspace</Link>
             <a href="#services" className="hover:text-slate-950">Services</a>
             <Link href="/agents" className="hover:text-slate-950">Agents</Link>
@@ -48,7 +48,7 @@ export default function HomePage() {
             <div className="mx-auto mb-6 inline-flex items-center gap-2 rounded-full border border-violet-200/80 bg-white/70 px-4 py-2 text-xs font-semibold text-slate-700 shadow-sm backdrop-blur">
               <Zap size={14} className="text-violet-600"/> Powered by Gemini + Exa + Meta
             </div>
-            <h1 className="text-5xl font-semibold leading-[.98] tracking-[-0.055em] sm:text-6xl lg:text-7xl">Seamless Intelligence<br/>Limitless Possibility</h1>
+            <h1 className="text-2xl font-semibold leading-[.98] tracking-[-0.055em] sm:text-6xl lg:text-7xl">Seamless Intelligence<br/>Limitless Possibility</h1>
             <p className="mx-auto mt-5 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">One professional AI workspace for learning, coding, research, websites, opportunities, and Irembo services.</p>
             <div className="mt-7 flex flex-wrap justify-center gap-3">
               <Link href="/chat" className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-300 hover:bg-violet-700">Open Workspace<ArrowRight size={15}/></Link>
@@ -58,7 +58,7 @@ export default function HomePage() {
 
           <div className="relative mx-auto mt-14 h-52 max-w-5xl sm:h-64">
             {integrations.map((item, index) => (
-              <div key={item.label} className="absolute grid h-20 w-20 place-items-center rounded-3xl border border-white/80 bg-white/55 shadow-xl shadow-violet-100 backdrop-blur-xl sm:h-24 sm:w-24"
+              <div key={item.label} className="absolute grid h-20 w-20 place-items-center rounded-2xl border border-white/80 bg-white/55 shadow-xl shadow-violet-100 backdrop-blur-xl sm:h-24 sm:w-24"
                 style={{ left: ['3%','24%','46%','68%','86%'][index], top: [18,86,12,86,20][index] }}>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-slate-800">{item.icon}</div>
@@ -73,82 +73,82 @@ export default function HomePage() {
 
       <section id="services" className="border-y border-violet-100 bg-[#faf9ff] py-16 lg:py-20">
         <div className="mx-auto max-w-7xl px-5 lg:px-8">
-          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+          <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
             <div>
               <div className="text-xs font-semibold uppercase tracking-[0.18em] text-violet-600">Services</div>
-              <h2 className="mt-3 text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">Choose the service you need.</h2>
+              <h2 className="mt-3 text-2xl font-semibold tracking-[-0.04em] sm:text-2xl">Choose the service you need.</h2>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">LUMIA brings digital services, education, creative work, opportunities, and Irembo support into one platform.</p>
             </div>
             <Link href="/chat" className="inline-flex w-fit items-center gap-2 rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white">Ask LUMIA<ArrowRight size={15}/></Link>
           </div>
-          <div className="mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <Link key="Website Building" href="/chat" className="group rounded-3xl border border-violet-100 bg-white p-5 shadow-[0_14px_45px_rgba(124,58,237,.05)] transition hover:-translate-y-1 hover:border-violet-200">
+          <div className="mt-9 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <Link key="Website Building" href="/chat" className="group rounded-2xl border border-violet-100 bg-white p-5 shadow-[0_14px_45px_rgba(124,58,237,.05)] transition hover:-translate-y-1 hover:border-violet-200">
                   <div className="grid h-10 w-10 place-items-center rounded-2xl bg-violet-50 text-violet-600"><Sparkles size={18}/></div>
                   <h3 className="mt-4 text-sm font-semibold text-slate-900">Website Building</h3>
                   <p className="mt-2 text-xs leading-5 text-slate-500">Build professional websites and web platforms.</p>
                   <div className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-violet-600">View service<ArrowRight size={13}/></div>
                 </Link>
-                <Link key="Web Hosting" href="/chat" className="group rounded-3xl border border-violet-100 bg-white p-5 shadow-[0_14px_45px_rgba(124,58,237,.05)] transition hover:-translate-y-1 hover:border-violet-200">
+                <Link key="Web Hosting" href="/chat" className="group rounded-2xl border border-violet-100 bg-white p-5 shadow-[0_14px_45px_rgba(124,58,237,.05)] transition hover:-translate-y-1 hover:border-violet-200">
                   <div className="grid h-10 w-10 place-items-center rounded-2xl bg-violet-50 text-violet-600"><Sparkles size={18}/></div>
                   <h3 className="mt-4 text-sm font-semibold text-slate-900">Web Hosting</h3>
                   <p className="mt-2 text-xs leading-5 text-slate-500">Hosting setup, deployment, domains, and guidance.</p>
                   <div className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-violet-600">View service<ArrowRight size={13}/></div>
                 </Link>
-                <Link key="Teaching Tech" href="/chat" className="group rounded-3xl border border-violet-100 bg-white p-5 shadow-[0_14px_45px_rgba(124,58,237,.05)] transition hover:-translate-y-1 hover:border-violet-200">
+                <Link key="Teaching Tech" href="/chat" className="group rounded-2xl border border-violet-100 bg-white p-5 shadow-[0_14px_45px_rgba(124,58,237,.05)] transition hover:-translate-y-1 hover:border-violet-200">
                   <div className="grid h-10 w-10 place-items-center rounded-2xl bg-violet-50 text-violet-600"><Sparkles size={18}/></div>
                   <h3 className="mt-4 text-sm font-semibold text-slate-900">Teaching Tech</h3>
                   <p className="mt-2 text-xs leading-5 text-slate-500">Learn coding, AI, web development, and digital skills.</p>
                   <div className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-violet-600">View service<ArrowRight size={13}/></div>
                 </Link>
-                <Link key="Prompt Generation" href="/chat" className="group rounded-3xl border border-violet-100 bg-white p-5 shadow-[0_14px_45px_rgba(124,58,237,.05)] transition hover:-translate-y-1 hover:border-violet-200">
+                <Link key="Prompt Generation" href="/chat" className="group rounded-2xl border border-violet-100 bg-white p-5 shadow-[0_14px_45px_rgba(124,58,237,.05)] transition hover:-translate-y-1 hover:border-violet-200">
                   <div className="grid h-10 w-10 place-items-center rounded-2xl bg-violet-50 text-violet-600"><Sparkles size={18}/></div>
                   <h3 className="mt-4 text-sm font-semibold text-slate-900">Prompt Generation</h3>
                   <p className="mt-2 text-xs leading-5 text-slate-500">Create structured prompts for AI tools and workflows.</p>
                   <div className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-violet-600">View service<ArrowRight size={13}/></div>
                 </Link>
-                <Link key="Flyer & Graphic Design" href="/chat" className="group rounded-3xl border border-violet-100 bg-white p-5 shadow-[0_14px_45px_rgba(124,58,237,.05)] transition hover:-translate-y-1 hover:border-violet-200">
+                <Link key="Flyer & Graphic Design" href="/chat" className="group rounded-2xl border border-violet-100 bg-white p-5 shadow-[0_14px_45px_rgba(124,58,237,.05)] transition hover:-translate-y-1 hover:border-violet-200">
                   <div className="grid h-10 w-10 place-items-center rounded-2xl bg-violet-50 text-violet-600"><Sparkles size={18}/></div>
                   <h3 className="mt-4 text-sm font-semibold text-slate-900">Flyer & Graphic Design</h3>
                   <p className="mt-2 text-xs leading-5 text-slate-500">Design flyers, posters, social graphics, and brand assets.</p>
                   <div className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-violet-600">View service<ArrowRight size={13}/></div>
                 </Link>
-                <Link key="Irembo Agent Connect" href="/agents" className="group rounded-3xl border border-violet-100 bg-white p-5 shadow-[0_14px_45px_rgba(124,58,237,.05)] transition hover:-translate-y-1 hover:border-violet-200">
+                <Link key="Irembo Agent Connect" href="/agents" className="group rounded-2xl border border-violet-100 bg-white p-5 shadow-[0_14px_45px_rgba(124,58,237,.05)] transition hover:-translate-y-1 hover:border-violet-200">
                   <div className="grid h-10 w-10 place-items-center rounded-2xl bg-violet-50 text-violet-600"><Sparkles size={18}/></div>
                   <h3 className="mt-4 text-sm font-semibold text-slate-900">Irembo Agent Connect</h3>
                   <p className="mt-2 text-xs leading-5 text-slate-500">Find and connect with Irembo service agents.</p>
                   <div className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-violet-600">View service<ArrowRight size={13}/></div>
                 </Link>
-                <Link key="Jobs for Seekers" href="/chat" className="group rounded-3xl border border-violet-100 bg-white p-5 shadow-[0_14px_45px_rgba(124,58,237,.05)] transition hover:-translate-y-1 hover:border-violet-200">
+                <Link key="Jobs for Seekers" href="/chat" className="group rounded-2xl border border-violet-100 bg-white p-5 shadow-[0_14px_45px_rgba(124,58,237,.05)] transition hover:-translate-y-1 hover:border-violet-200">
                   <div className="grid h-10 w-10 place-items-center rounded-2xl bg-violet-50 text-violet-600"><Sparkles size={18}/></div>
                   <h3 className="mt-4 text-sm font-semibold text-slate-900">Jobs for Seekers</h3>
                   <p className="mt-2 text-xs leading-5 text-slate-500">Discover opportunities and prepare applications.</p>
                   <div className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-violet-600">View service<ArrowRight size={13}/></div>
                 </Link>
-                <Link key="Support & Donations" href="/chat" className="group rounded-3xl border border-violet-100 bg-white p-5 shadow-[0_14px_45px_rgba(124,58,237,.05)] transition hover:-translate-y-1 hover:border-violet-200">
+                <Link key="Support & Donations" href="/chat" className="group rounded-2xl border border-violet-100 bg-white p-5 shadow-[0_14px_45px_rgba(124,58,237,.05)] transition hover:-translate-y-1 hover:border-violet-200">
                   <div className="grid h-10 w-10 place-items-center rounded-2xl bg-violet-50 text-violet-600"><Sparkles size={18}/></div>
                   <h3 className="mt-4 text-sm font-semibold text-slate-900">Support & Donations</h3>
                   <p className="mt-2 text-xs leading-5 text-slate-500">Support people and community needs through available channels.</p>
                   <div className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-violet-600">View service<ArrowRight size={13}/></div>
                 </Link>
-                <Link key="NESA Exam Papers" href="/chat" className="group rounded-3xl border border-violet-100 bg-white p-5 shadow-[0_14px_45px_rgba(124,58,237,.05)] transition hover:-translate-y-1 hover:border-violet-200">
+                <Link key="NESA Exam Papers" href="/chat" className="group rounded-2xl border border-violet-100 bg-white p-5 shadow-[0_14px_45px_rgba(124,58,237,.05)] transition hover:-translate-y-1 hover:border-violet-200">
                   <div className="grid h-10 w-10 place-items-center rounded-2xl bg-violet-50 text-violet-600"><Sparkles size={18}/></div>
                   <h3 className="mt-4 text-sm font-semibold text-slate-900">NESA Exam Papers</h3>
                   <p className="mt-2 text-xs leading-5 text-slate-500">Practice with exam papers, explanations, and answer guidance.</p>
                   <div className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-violet-600">View service<ArrowRight size={13}/></div>
                 </Link>
-                <Link key="AI Research" href="/chat" className="group rounded-3xl border border-violet-100 bg-white p-5 shadow-[0_14px_45px_rgba(124,58,237,.05)] transition hover:-translate-y-1 hover:border-violet-200">
+                <Link key="AI Research" href="/chat" className="group rounded-2xl border border-violet-100 bg-white p-5 shadow-[0_14px_45px_rgba(124,58,237,.05)] transition hover:-translate-y-1 hover:border-violet-200">
                   <div className="grid h-10 w-10 place-items-center rounded-2xl bg-violet-50 text-violet-600"><Sparkles size={18}/></div>
                   <h3 className="mt-4 text-sm font-semibold text-slate-900">AI Research</h3>
                   <p className="mt-2 text-xs leading-5 text-slate-500">Research topics using LUMIA web intelligence.</p>
                   <div className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-violet-600">View service<ArrowRight size={13}/></div>
                 </Link>
-                <Link key="Website & App Development" href="/chat" className="group rounded-3xl border border-violet-100 bg-white p-5 shadow-[0_14px_45px_rgba(124,58,237,.05)] transition hover:-translate-y-1 hover:border-violet-200">
+                <Link key="Website & App Development" href="/chat" className="group rounded-2xl border border-violet-100 bg-white p-5 shadow-[0_14px_45px_rgba(124,58,237,.05)] transition hover:-translate-y-1 hover:border-violet-200">
                   <div className="grid h-10 w-10 place-items-center rounded-2xl bg-violet-50 text-violet-600"><Sparkles size={18}/></div>
                   <h3 className="mt-4 text-sm font-semibold text-slate-900">Website & App Development</h3>
                   <p className="mt-2 text-xs leading-5 text-slate-500">Plan, design, and develop digital products.</p>
                   <div className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-violet-600">View service<ArrowRight size={13}/></div>
                 </Link>
-                <Link key="Digital Business Support" href="/chat" className="group rounded-3xl border border-violet-100 bg-white p-5 shadow-[0_14px_45px_rgba(124,58,237,.05)] transition hover:-translate-y-1 hover:border-violet-200">
+                <Link key="Digital Business Support" href="/chat" className="group rounded-2xl border border-violet-100 bg-white p-5 shadow-[0_14px_45px_rgba(124,58,237,.05)] transition hover:-translate-y-1 hover:border-violet-200">
                   <div className="grid h-10 w-10 place-items-center rounded-2xl bg-violet-50 text-violet-600"><Sparkles size={18}/></div>
                   <h3 className="mt-4 text-sm font-semibold text-slate-900">Digital Business Support</h3>
                   <p className="mt-2 text-xs leading-5 text-slate-500">Use AI to improve business tasks and workflows.</p>
@@ -161,12 +161,12 @@ export default function HomePage() {
       <section id="features" className="mx-auto max-w-7xl px-5 py-16 lg:px-8 lg:py-24">
         <div className="text-center">
           <div className="text-xs font-semibold uppercase tracking-[0.18em] text-violet-600">Intelligent features</div>
-          <h2 className="mt-3 text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">Everything you need in one AI platform</h2>
+          <h2 className="mt-3 text-2xl font-semibold tracking-[-0.04em] sm:text-2xl">Everything you need in one AI platform</h2>
           <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-500">Designed for people who want one place to think, build, search, and get things done.</p>
         </div>
-        <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-4">
           {features.map(({icon: Icon,title,text}) => (
-            <Link key={title} href={title === 'Irembo Services' ? '/services' : '/chat'} className="group rounded-3xl border border-violet-100 bg-white p-6 shadow-[0_16px_50px_rgba(124,58,237,.06)] transition hover:-translate-y-1 hover:border-violet-200">
+            <Link key={title} href={title === 'Irembo Services' ? '/services' : '/chat'} className="group rounded-2xl border border-violet-100 bg-white p-4 shadow-[0_16px_50px_rgba(124,58,237,.06)] transition hover:-translate-y-1 hover:border-violet-200">
               <div className="grid h-11 w-11 place-items-center rounded-2xl bg-violet-50 text-violet-600"><Icon size={19}/></div>
               <h3 className="mt-5 text-base font-semibold">{title}</h3>
               <p className="mt-2 text-sm leading-6 text-slate-500">{text}</p>
@@ -177,16 +177,16 @@ export default function HomePage() {
       </section>
 
       <section className="mx-auto max-w-7xl px-5 pb-16 lg:px-8">
-        <div className="overflow-hidden rounded-[2rem] border border-violet-200 bg-[#17171a] px-5 py-8 shadow-[0_30px_100px_rgba(124,58,237,.18)] sm:px-8 sm:py-10 lg:px-10">
-          <div className="grid gap-10 lg:grid-cols-[.8fr_1.2fr] lg:items-center">
+        <div className="overflow-hidden rounded-[2rem] border border-violet-200 bg-[#17171a] px-5 py-8 shadow-[0_30px_100px_rgba(124,58,237,.18)] sm:px-8 sm:py-6 lg:px-10">
+          <div className="grid gap-3 lg:grid-cols-[.8fr_1.2fr] lg:items-center">
             <div className="text-white">
               <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-violet-200"><Network size={13}/> LUMIA Workspace</div>
-              <h2 className="mt-4 text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">Ask AI anything. Build with it. Search with it.</h2>
+              <h2 className="mt-4 text-2xl font-semibold tracking-[-0.04em] sm:text-2xl">Ask AI anything. Build with it. Search with it.</h2>
               <p className="mt-3 max-w-lg text-sm leading-6 text-slate-400">A focused dark workspace inspired by modern AI products, connected directly to your LUMIA backend.</p>
-              <Link href="/chat" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-violet-500 px-4 py-2.5 text-sm font-semibold text-white">Launch workspace<ArrowRight size={15}/></Link>
+              <Link href="/chat" className="mt-4 inline-flex items-center gap-2 rounded-xl bg-violet-500 px-4 py-2.5 text-sm font-semibold text-white">Launch workspace<ArrowRight size={15}/></Link>
             </div>
-            <div className="rounded-3xl border border-white/10 bg-[#202023] p-4 shadow-2xl shadow-black/30">
-              <div className="flex gap-4">
+            <div className="rounded-2xl border border-white/10 bg-[#202023] p-4 shadow-2xl shadow-black/30">
+              <div className="flex gap-3">
                 <aside className="hidden w-44 shrink-0 rounded-2xl border border-white/5 bg-[#17171a] p-3 sm:block">
                   <div className="text-sm font-semibold text-white">LUMIA</div>
                   <button className="mt-4 w-full rounded-xl border border-violet-400/50 bg-transparent px-3 py-2 text-xs text-slate-200">+ New Chat</button>
@@ -197,7 +197,7 @@ export default function HomePage() {
                     <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-violet-500/15 text-violet-300"><Sparkles size={22}/></div>
                     <div className="mt-4 text-sm text-slate-500">Welcome to LUMIA</div>
                     <div className="mt-2 text-2xl font-medium text-slate-100">How can I assist you?</div>
-                    <div className="mt-6 grid gap-3 sm:grid-cols-3">
+                    <div className="mt-4 grid gap-3 sm:grid-cols-3">
                       {['Build a website','Research a topic','Find an Irembo service'].map((item)=><div key={item} className="rounded-2xl border border-white/10 bg-white/[.02] p-4 text-left text-xs text-slate-400"><Search size={14} className="mb-6 text-slate-500"/>{item}</div>)}
                     </div>
                     <div className="mt-7 rounded-2xl border border-violet-400/50 bg-[#16161a] px-4 py-3 text-left text-xs text-slate-500 shadow-[0_0_45px_rgba(168,85,247,.10)]">Ask LUMIA anything or write your request...</div>
