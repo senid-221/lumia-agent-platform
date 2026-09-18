@@ -221,6 +221,25 @@ app.post('/api/v1/auth/login', async (request, reply) => {
   return { token: await token({ id: user.id, email: user.email, role: user.role }), user: { id: user.id, email: user.email, role: user.role } };
 });
 
+app.get('/api/v1/notifications', async (request, reply) => {
+  const user = await auth(request, reply); if (!user) return;
+  const notifications = await db.notification.findMany({
+    where: { userId: user.id },
+    orderBy: { createdAt: 'desc' },
+    take: 50
+  });
+  return { notifications };
+});
+
+app.post('/api/v1/notifications/:id/read', async (request, reply) => {
+  const user = await auth(request, reply); if (!user) return;
+  const { id } = z.object({ id: z.string() }).parse(request.params);
+  const notification = await db.notification.findFirst({ where: { id, userId: user.id } });
+  if (!notification) return reply.code(404).send({ error: 'Notification not found' });
+  const updated = await db.notification.update({ where: { id }, data: { readAt: new Date() } });
+  return { notification: updated };
+});
+
 app.get('/api/v1/irembo/services', async () => ({ services: await db.iremboService.findMany({ where: { active: true }, orderBy: [{ category: 'asc' }, { name: 'asc' }] }) }));
 
 app.get('/api/v1/irembo-agents/plans', async () => ({ plans: await db.agentPlan.findMany({ where: { active: true }, orderBy: { priceRwf: 'asc' } }) }));
@@ -252,23 +271,83 @@ app.post('/api/v1/irembo-agents/subscriptions', async (request, reply) => {
 
 app.post('/api/v1/irembo/service-requests', async (request, reply) => {
   const user = await auth(request, reply); if (!user) return;
-  const body = z.object({ serviceId: z.string(), customerName: z.string().min(2), customerPhone: z.string().min(8), description: z.string().max(2000).optional(), location: z.string().optional() }).parse(request.body);
+  const body = z.object({
+    serviceId: z.string(),
+    customerName: z.string().min(2),
+    customerPhone: z.string().regex(/^\+?[0-9]{8,15}$/),
+    description: z.string().max(2000).optional(),
+    location: z.string().max(200).optional()
+  }).parse(request.body);
+
   const service = await db.iremboService.findUnique({ where: { id: body.serviceId } });
   if (!service) return reply.code(404).send({ error: 'Irembo service not found' });
-  const requestRow = await db.serviceRequest.create({ data: { ...body, customerId: user.id, status: 'PENDING' } });
-  const agents = await db.iremboAgent.findMany({ where: { status: 'ACTIVE', verificationStatus: 'VERIFIED', serviceAreas: { has: service.name } }, take: 10 });
-  return { requestId: requestRow.id, status: requestRow.status, matchedAgents: agents.map(a => ({ id: a.id, displayName: a.displayName, location: a.location })) };
+
+  const requestRow = await db.serviceRequest.create({
+    data: { ...body, customerId: user.id, status: 'PENDING' }
+  });
+
+  const agents = await db.iremboAgent.findMany({
+    where: {
+      status: 'ACTIVE',
+      verificationStatus: 'VERIFIED',
+      serviceAreas: { has: service.name }
+    },
+    take: 10
+  });
+
+  return {
+    requestId: requestRow.id,
+    status: requestRow.status,
+    matchedAgents: agents.map(a => ({
+      id: a.id,
+      displayName: a.displayName,
+      phone: a.phone,
+      location: a.location,
+      serviceAreas: a.serviceAreas
+    }))
+  };
 });
 
 app.post('/api/v1/irembo/service-requests/:id/choose-agent', async (request, reply) => {
   const user = await auth(request, reply); if (!user) return;
   const { id } = z.object({ id: z.string() }).parse(request.params);
   const { agentId } = z.object({ agentId: z.string() }).parse(request.body);
-  const existing = await db.serviceRequest.findFirst({ where: { id, customerId: user.id } });
+
+  const existing = await db.serviceRequest.findFirst({
+    where: { id, customerId: user.id },
+    include: { service: true }
+  });
   if (!existing) return reply.code(404).send({ error: 'Service request not found' });
-  const agent = await db.iremboAgent.findFirst({ where: { id: agentId, status: 'ACTIVE', verificationStatus: 'VERIFIED' } });
+
+  const agent = await db.iremboAgent.findFirst({
+    where: { id: agentId, status: 'ACTIVE', verificationStatus: 'VERIFIED' }
+  });
   if (!agent) return reply.code(404).send({ error: 'Agent not available' });
-  const updated = await db.serviceRequest.update({ where: { id }, data: { agentId, status: 'MATCHED' }, include: { service: true, agent: true } });
+
+  const updated = await db.serviceRequest.update({
+    where: { id },
+    data: { agentId, status: 'MATCHED' },
+    include: { service: true, agent: true }
+  });
+
+  await db.notification.create({
+    data: {
+      userId: agent.userId,
+      type: 'IREMBO_SERVICE_REQUEST',
+      title: 'New Irembo service request',
+      body: `Customer ${existing.customerName} requested ${existing.service.name}. Phone: ${existing.customerPhone}. Location: ${existing.location || 'Not provided'}.`
+    }
+  });
+
+  await db.notification.create({
+    data: {
+      userId: user.id,
+      type: 'IREMBO_AGENT_MATCHED',
+      title: 'Agent selected',
+      body: `${agent.displayName} has been selected to help with ${existing.service.name}.`
+    }
+  });
+
   return { request: updated };
 });
 
