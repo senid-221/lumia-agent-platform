@@ -59,6 +59,7 @@ model User {
   notifications Notification[]
   partner      Partner?
   marketplaceOrders MarketplaceOrder[]
+  providerRequests ProviderRequest[] @relation("CustomerProviderRequests")
 }
 
 model Session {
@@ -113,6 +114,7 @@ model IremboAgent {
   user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   subscriptions      AgentSubscription[]
   requests           ServiceRequest[]
+  providerRequests    ProviderRequest[] @relation("ProviderServiceRequests")
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
   @@index([status, verificationStatus, location])
@@ -237,6 +239,7 @@ model PlatformService {
   active      Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  providerRequests ProviderRequest[]
 }
 
 model Partner {
@@ -301,4 +304,25 @@ model MarketplaceOrderItem {
   order     MarketplaceOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product   Product          @relation(fields: [productId], references: [id])
   @@unique([orderId, productId])
+}
+
+
+model ProviderRequest {
+  id            String        @id @default(cuid())
+  customerId    String
+  serviceId     String
+  customerName  String
+  customerPhone String
+  details       String
+  location      String?
+  status        RequestStatus @default(PENDING)
+  providerId    String?
+  customer      User          @relation("CustomerProviderRequests", fields: [customerId], references: [id], onDelete: Cascade)
+  service       PlatformService @relation(fields: [serviceId], references: [id])
+  provider      IremboAgent?  @relation("ProviderServiceRequests", fields: [providerId], references: [id])
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  @@index([serviceId, status])
+  @@index([providerId, status])
+  @@index([customerId, createdAt])
 }
