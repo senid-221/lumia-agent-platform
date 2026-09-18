@@ -52,7 +52,7 @@ app.get('/', async () => ({
 
 app.get('/health', async () => ({ status: 'ok', service: 'LUMIA AGENT PLATFORM', version: '1.0.0' }));
 
-async function markWhatsAppRead(to: string, messageId?: string) {
+async function markWhatsAppReadAndTyping(to: string, messageId?: string) {
   if (!env.WHATSAPP_ACCESS_TOKEN || !env.WHATSAPP_PHONE_NUMBER_ID || !messageId) return;
   const url = `https://graph.facebook.com/${env.WHATSAPP_GRAPH_VERSION}/${env.WHATSAPP_PHONE_NUMBER_ID}/messages`;
   const response = await fetch(url, {
@@ -64,12 +64,36 @@ async function markWhatsAppRead(to: string, messageId?: string) {
     body: JSON.stringify({
       messaging_product: 'whatsapp',
       status: 'read',
-      message_id: messageId
+      message_id: messageId,
+      typing_indicator: { type: 'text' }
     })
   });
+
   if (!response.ok) {
     const detail = await response.text();
-    app.log.warn({ status: response.status, detail }, 'WhatsApp read receipt failed');
+    app.log.warn({ status: response.status, detail }, 'WhatsApp typing/read indicator failed');
+
+    // Keep the read receipt working even if the typing indicator is rejected.
+    try {
+      const readResponse = await fetch(url, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${env.WHATSAPP_ACCESS_TOKEN}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          messaging_product: 'whatsapp',
+          status: 'read',
+          message_id: messageId
+        })
+      });
+      if (!readResponse.ok) {
+        const readDetail = await readResponse.text();
+        app.log.warn({ status: readResponse.status, detail: readDetail }, 'WhatsApp read receipt failed');
+      }
+    } catch (error) {
+      app.log.warn({ error }, 'WhatsApp read receipt retry failed');
+    }
   }
 }
 
@@ -200,9 +224,9 @@ async function generateLumiaReply(message: string, history: Array<{ role: 'user'
     'Write clean plain text for WhatsApp and web chat.',
     'Do not use Markdown headings with #, ##, ### or asterisks for bold/italic.',
     'Do not wrap links in Markdown syntax.',
-    'Keep answers compact and readable on a phone.',
+    'Keep answers compact and readable on a phone.',\n    'Never reveal or name the internal AI model, provider, tool, agent, search engine, API, framework, or backend implementation used to produce the answer.',\n    'Do not say that you used Groq, Exa, an Agent, a tool, a model, or any internal system. Present the response simply as LUMIA AI.',
     'Be concise, helpful, factual, and clear.',
-    'When web context is provided, use it for current claims and include relevant source URLs.',
+    'When web context is provided, use it for current claims. Include a source URL only when it is useful to the customer; never mention the internal search tool or provider.',
     'For Irembo requirements or fees, prefer official Irembo sources and state uncertainty when verification is unavailable.',
     '',
     'CONVERSATION HISTORY:',
@@ -662,7 +686,7 @@ app.post('/api/v1/whatsapp/webhook', async (request, reply) => {
     const { session, user } = await getWhatsAppSession(from);
     await db.message.create({ data: { sessionId: session.id, role: 'user', content: text } });
 
-    await markWhatsAppRead(from, messageId);
+    await markWhatsAppReadAndTyping(from, messageId);
 
     const handled = await handleWhatsAppCommand(from, user, text);
     if (handled) {
