@@ -53,48 +53,18 @@ app.get('/', async () => ({
 
 app.get('/health', async () => ({ status: 'ok', service: 'LUMIA AGENT PLATFORM', version: '1.0.0' }));
 
-async function markWhatsAppReadAndTyping(to: string, messageId?: string) {
+async function markWhatsAppRead(to: string, messageId?: string) {
   if (!env.WHATSAPP_ACCESS_TOKEN || !env.WHATSAPP_PHONE_NUMBER_ID || !messageId) return;
   const url = `https://graph.facebook.com/${env.WHATSAPP_GRAPH_VERSION}/${env.WHATSAPP_PHONE_NUMBER_ID}/messages`;
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${env.WHATSAPP_ACCESS_TOKEN}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      messaging_product: 'whatsapp',
-      status: 'read',
-      message_id: messageId,
-      typing_indicator: { type: 'text' }
-    })
-  });
-
-  if (!response.ok) {
-    const detail = await response.text();
-    app.log.warn({ status: response.status, detail }, 'WhatsApp typing/read indicator failed');
-
-    // Keep the read receipt working even if the typing indicator is rejected.
-    try {
-      const readResponse = await fetch(url, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${env.WHATSAPP_ACCESS_TOKEN}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          messaging_product: 'whatsapp',
-          status: 'read',
-          message_id: messageId
-        })
-      });
-      if (!readResponse.ok) {
-        const readDetail = await readResponse.text();
-        app.log.warn({ status: readResponse.status, detail: readDetail }, 'WhatsApp read receipt failed');
-      }
-    } catch (error) {
-      app.log.warn({ error }, 'WhatsApp read receipt retry failed');
-    }
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${env.WHATSAPP_ACCESS_TOKEN}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messaging_product: 'whatsapp', status: 'read', message_id: messageId })
+    });
+    if (!response.ok) app.log.warn({ status: response.status, detail: await response.text() }, 'WhatsApp read receipt failed');
+  } catch (error) {
+    app.log.warn({ error }, 'WhatsApp read receipt failed');
   }
 }
 
@@ -818,7 +788,7 @@ app.post('/api/v1/whatsapp/webhook', async (request, reply) => {
     const { session, user } = await getWhatsAppSession(from);
     await db.message.create({ data: { sessionId: session.id, role: 'user', content: text } });
 
-    await markWhatsAppReadAndTyping(from, messageId);
+    await markWhatsAppRead(from, messageId);
 
     const handled = await handleWhatsAppCommand(from, user, text);
     if (handled) {
