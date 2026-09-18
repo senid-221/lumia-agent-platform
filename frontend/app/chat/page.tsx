@@ -207,11 +207,11 @@ function ChatPageContent() {
               </div>
             </div>
           ) : (
-            <div className="mx-auto max-w-3xl space-y-4 px-4 py-6">
+            <div className="mx-auto w-full max-w-4xl space-y-4 px-3 py-5 sm:px-4">
               {messages.map((item, i) => (
                 <div key={`${item.role}-${i}`} className={item.role === 'user' ? 'flex justify-end' : 'flex items-start gap-3'}>
                   {item.role === 'assistant' && <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-white/10 bg-[#202024] text-violet-300"><Bot size={16}/></div>}
-                  <div className={item.role === 'user' ? 'max-w-[85%] rounded-3xl rounded-br-lg bg-violet-500 px-5 py-3.5 text-sm leading-6 text-white whitespace-pre-wrap' : 'max-w-[85%] rounded-3xl rounded-bl-lg border border-white/10 bg-[#202024] px-5 py-4 text-sm leading-6 text-slate-200 whitespace-pre-wrap'}>{item.content}</div>
+                  <div className={item.role === 'user' ? 'max-w-[88%] rounded-3xl rounded-br-lg bg-violet-500 px-4 py-3 text-sm leading-6 text-white whitespace-pre-wrap sm:max-w-[80%]' : 'w-full max-w-[calc(100%-2.5rem)] rounded-3xl rounded-bl-lg border border-white/10 bg-[#202024] px-4 py-3 text-sm leading-6 text-slate-200 whitespace-pre-wrap sm:max-w-[88%]'}>{item.content}</div>
                 </div>
               ))}
               {loading && <div className="flex items-start gap-3"><div className="grid h-9 w-9 place-items-center rounded-xl border border-white/10 bg-[#202024] text-violet-300"><Bot size={16}/></div><div className="rounded-3xl rounded-bl-lg border border-white/10 bg-[#202024] px-5 py-4 text-sm text-slate-500">LUMIA is responding…</div></div>}
