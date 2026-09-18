@@ -27,7 +27,8 @@
     "zod": "4.1.5",
     "@whiskeysockets/baileys": "latest",
     "@fastify/cookie": "10.0.1",
-    "openai": "latest"
+    "openai": "latest",
+    "exa-js": "latest"
   },
   "devDependencies": {
     "prisma": "6.16.2",
