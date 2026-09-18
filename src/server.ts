@@ -241,6 +241,56 @@ app.get('/api/v1/irembo-agents', async (request) => {
   return { agents: filtered.map(({ subscriptions, ...a }) => a) };
 });
 
+app.get('/api/v1/agent/requests', async (request, reply) => {
+  const user = await auth(request, reply); if (!user) return;
+  if (user.role !== 'AGENT' && user.role !== 'ADMIN') return reply.code(403).send({ error: 'Agent access required' });
+
+  const agent = await db.iremboAgent.findUnique({ where: { userId: user.id } });
+  if (!agent && user.role !== 'ADMIN') return reply.code(404).send({ error: 'Agent profile not found' });
+
+  const requests = await db.serviceRequest.findMany({
+    where: agent ? { agentId: agent.id } : undefined,
+    orderBy: { createdAt: 'desc' },
+    include: { service: true, customer: true, agent: true }
+  });
+
+  return { requests };
+});
+
+app.post('/api/v1/agent/requests/:id/status', async (request, reply) => {
+  const user = await auth(request, reply); if (!user) return;
+  if (user.role !== 'AGENT' && user.role !== 'ADMIN') return reply.code(403).send({ error: 'Agent access required' });
+
+  const { id } = z.object({ id: z.string() }).parse(request.params);
+  const { status } = z.object({
+    status: z.enum(['ACCEPTED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'])
+  }).parse(request.body);
+
+  const agent = await db.iremboAgent.findUnique({ where: { userId: user.id } });
+  const existing = agent
+    ? await db.serviceRequest.findFirst({ where: { id, agentId: agent.id }, include: { service: true } })
+    : await db.serviceRequest.findUnique({ where: { id }, include: { service: true } });
+
+  if (!existing) return reply.code(404).send({ error: 'Assigned request not found' });
+
+  const updated = await db.serviceRequest.update({
+    where: { id },
+    data: { status },
+    include: { service: true, agent: true }
+  });
+
+  await db.notification.create({
+    data: {
+      userId: updated.customerId,
+      type: 'IREMBO_REQUEST_STATUS',
+      title: 'Service request updated',
+      body: `${updated.agent?.displayName || 'Your agent'} changed ${existing.service.name} to ${status.replace('_', ' ').toLowerCase()}.`
+    }
+  });
+
+  return { request: updated };
+});
+
 app.post('/api/v1/irembo-agents/register', async (request, reply) => {
   const user = await auth(request, reply); if (!user) return;
   const body = z.object({ displayName: z.string().min(2), phone: z.string().min(8), location: z.string().min(2), serviceAreas: z.array(z.string()).min(1), bio: z.string().max(1000).optional() }).parse(request.body);
