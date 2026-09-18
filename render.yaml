@@ -19,10 +19,10 @@ services:
         value: "*"
       - key: EXA_API_KEY
         sync: false
-      - key: GEMINI_API_KEY
+      - key: GROQ_API_KEY
         sync: false
-      - key: GEMINI_MODEL
-        value: gemini-3.8-flash
+      - key: GROQ_MODELS
+        value: openai/gpt-oss-120b,openai/gpt-oss-20b,qwen/qwen3.8-27b,qwen/qwen3.6-27b
       - key: WHATSAPP_VERIFY_TOKEN
         sync: false
       - key: WHATSAPP_ACCESS_TOKEN
