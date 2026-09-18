@@ -496,7 +496,7 @@ async function handleWhatsAppCommand(phone: string, user: any, text: string) {
     'driving-training': 'DRIVING TRAINING\\n\\nLUMIA ishobora kugufasha gushaka driving training, amasomo ya theory/practical n’aho wakorera training. Driving schools mu Rwanda zigengwa na RURA. Andika LOCATION yawe n’icyo wifuza kwiga.',
     'restaurant-bookers': 'RESTAURANT BOOKERS\\n\\nShaka restaurant, menu cyangwa reservation. Andika izina rya restaurant, location, itariki, igihe n’umubare w’abantu.',
     'shopping-orders': 'SHOPPING ORDERS\\n\\nShaka ibicuruzwa cyangwa utange order. Andika product ushaka, quantity, location yo kuyigezwaho n’uburyo bwo kuvugana nawe.',
-    'car-repairing': 'CAR REPAIRING\\n\\nShaka umukanishi wa moto? Oya — iyi ni CAR REPAIRING. Andika ikibazo cy’imodoka, model yayo n’aho uri.',
+    'car-repairing': 'CAR REPAIRING\\n\\nShaka umukanishi w’imodoka. Andika ikibazo cy’imodoka, model yayo n’aho uri.',
     'motor-repairing': 'MOTOR REPAIRING\\n\\nShaka umukanishi wa moto. Andika ikibazo cya moto, model yayo n’aho uri.',
     'land-survey': 'LAND SURVEY\\n\\nSerivisi yo gufata ibipimo no gufotora/kwerekana amakuru y’ubutaka. Andika location y’ubutaka n’icyo ushaka gukorerwa. LUMIA izaguhuza n’umupima ubutaka ubifitiye ububasha.',
     'computer-repairing': 'COMPUTER REPAIRING\\n\\nShaka technician wo gusana computer. Andika ikibazo cya computer, model niba uyizi n’aho uri.',
@@ -509,7 +509,7 @@ async function handleWhatsAppCommand(phone: string, user: any, text: string) {
   }
 
   if (selected === 'services') {
-    await sendWhatsAppText(phone, `LUMIA SERVICES\n\n1. Building website\n2. Web hosting\n3. Teaching tech\n4. Prompt generation\n5. Flyer & graphic design\n6. Irembo agent connect\n7. Jobs for seekers\n8. Donations & community support\n9. NESA exam study support\n10. AI research\n11. Website & app development\n12. Digital business support\n\nAndika service ushaka. LUMIA izagufasha gutangira.`);
+    await sendWhatsAppText(phone, `LUMIA SERVICES\n\n1. Hair Fashion\n2. Driving Training\n3. Restaurant Bookers\n4. Shopping Orders\n5. Car Repairing\n6. Motor Repairing\n7. Land Survey\n8. Computer Repairing\n9. Boutique Food Ordering\n10. Website Building\n11. Web Hosting\n12. Teaching Tech\n13. Prompt Generation\n14. Flyer & Graphic Design\n15. Jobs for Seekers\n\nAndika service ushaka. LUMIA izagufasha gutangira.`);
     return true;
   }
 
