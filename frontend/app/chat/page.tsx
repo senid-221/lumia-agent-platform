@@ -50,6 +50,7 @@ export default function ChatPage() {
 
   async function loadAgents(serviceName: string) {
     setAgentsLoading(true);
+    setError('');
     try {
       const result = await api<{ agents: Array<{ id: string; displayName: string; phone: string; location: string; serviceAreas: string[] }> }>(
         '/api/v1/irembo-agents?serviceType=' + encodeURIComponent(serviceName)
@@ -67,7 +68,7 @@ export default function ChatPage() {
     try {
       const token = window.localStorage.getItem('lumia_token');
       if (!token) throw new Error('Please log in first.');
-      setRequestMessage('Creating your service request…');
+      const email = window.localStorage.getItem('lumia_email') || 'customer@lumia.local';
       const services = await api<{ services: Array<{ id: string; name: string }> }>('/api/v1/irembo/services');
       const service = services.services.find((item) => item.name.toLowerCase() === selectedService.toLowerCase());
       if (!service) throw new Error('This Irembo service is not yet linked to the service database.');
@@ -76,12 +77,12 @@ export default function ChatPage() {
         headers: { Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           serviceId: service.id,
-          customerName: window.localStorage.getItem('lumia_email') || 'LUMIA customer',
+          customerName: email.split('@')[0],
           customerPhone: '',
           description: 'Requested through LUMIA AI',
         }),
       });
-      await api(`/api/v1/irembo/service-requests/${created.requestId}/choose-agent`, {
+      await api('/api/v1/irembo/service-requests/' + created.requestId + '/choose-agent', {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: JSON.stringify({ agentId }),
