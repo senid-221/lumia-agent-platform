@@ -5,14 +5,14 @@ import rateLimit from '@fastify/rate-limit';
 import bcrypt from 'bcryptjs';
 import { SignJWT, jwtVerify } from 'jose';
 import { z } from 'zod';
-import OpenAI from 'openai';
+import { GoogleGenAI } from '@google/genai';
 import Exa from 'exa-js';
 import { env } from './config.js';
 import { db } from './db.js';
 
 const app = Fastify({ logger: true });
 const secret = new TextEncoder().encode(env.JWT_SECRET);
-const openai = env.OPENAI_API_KEY ? new OpenAI({ apiKey: env.OPENAI_API_KEY }) : null;
+const gemini = env.GEMINI_API_KEY ? new GoogleGenAI({ apiKey: env.GEMINI_API_KEY }) : null;
 const exa = env.EXA_API_KEY ? new Exa(env.EXA_API_KEY) : null;
 
 type AuthUser = { id: string; email: string; role: 'CUSTOMER'|'AGENT'|'ADMIN' };
@@ -103,7 +103,7 @@ function needsWebSearch(message: string) {
 }
 
 async function generateLumiaReply(message: string) {
-  if (!openai) return 'LUMIA is temporarily unavailable. Please try again later.';
+  if (!gemini) return 'LUMIA is temporarily unavailable. Please try again later.';
   let webContext = '';
   if (exa && needsWebSearch(message)) {
     const results = await searchWeb(message);
@@ -113,14 +113,21 @@ async function generateLumiaReply(message: string) {
       ).join('\n\n');
     }
   }
-  const completion = await openai.chat.completions.create({
-    model: env.OPENAI_MODEL,
-    messages: [
-      { role: 'system', content: 'You are LUMIA, an AI assistant for the LUMIA Agent Platform. Be concise, helpful, and factual. When web context is provided, use it for current claims and include source URLs naturally. For Irembo-specific requirements or fees, prefer official Irembo sources and make uncertainty clear.' },
-      { role: 'user', content: message + webContext }
-    ]
+  const prompt = [
+    'You are LUMIA, an AI assistant for the LUMIA Agent Platform.',
+    'Be concise, helpful, factual, and clear.',
+    'When web context is provided, use it for current claims and include relevant source URLs.',
+    'For Irembo requirements or fees, prefer official Irembo sources and state uncertainty when verification is unavailable.',
+    '',
+    'USER:',
+    message,
+    webContext
+  ].join('\n');
+  const response = await gemini.models.generateContent({
+    model: env.GEMINI_MODEL,
+    contents: prompt
   });
-  return completion.choices[0]?.message?.content?.trim() || 'I could not generate a response right now.';
+  return response.text?.trim() || 'I could not generate a response right now.';
 }
 
 app.get('/api/v1/whatsapp/webhook', async (request, reply) => {
