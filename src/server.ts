@@ -97,12 +97,20 @@ async function sendWhatsAppTyping(to: string) {
 }
 
 async function sendWhatsAppText(to: string, body: string) {
-  if (!env.WHATSAPP_ACCESS_TOKEN || !env.WHATSAPP_PHONE_NUMBER_ID) throw new Error('WhatsApp credentials are not configured');
-  const url = `https://graph.facebook.com/${env.WHATSAPP_GRAPH_VERSION}/${env.WHATSAPP_PHONE_NUMBER_ID}/messages`;
+  const accessToken = env.WHATSAPP_ACCESS_TOKEN?.trim();
+  const phoneNumberId = env.WHATSAPP_PHONE_NUMBER_ID?.trim();
+  const missing: string[] = [];
+  if (!accessToken) missing.push('WHATSAPP_ACCESS_TOKEN');
+  if (!phoneNumberId) missing.push('WHATSAPP_PHONE_NUMBER_ID');
+  if (missing.length) {
+    throw new Error(`WhatsApp credentials are not configured: missing ${missing.join(', ')}`);
+  }
+
+  const url = `https://graph.facebook.com/${env.WHATSAPP_GRAPH_VERSION}/${phoneNumberId}/messages`;
   const response = await fetch(url, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${env.WHATSAPP_ACCESS_TOKEN}`,
+      Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
