@@ -103,7 +103,7 @@ function needsWebSearch(message: string) {
   return /latest|today|now|current|recent|price|cost|news|2026|available|requirement|requirements|official|iremb|job|jobs|opportunit|website|who is|what is/i.test(message);
 }
 
-async function generateLumiaReply(message: string) {
+async function generateLumiaReply(message: string, history: Array<{ role: 'user'|'assistant'; content: string }> = []) {
   if (!gemini) return 'LUMIA is temporarily unavailable. Please try again later.';
   let webContext = '';
   if (exa && needsWebSearch(message)) {
@@ -120,6 +120,8 @@ async function generateLumiaReply(message: string) {
     'When web context is provided, use it for current claims and include relevant source URLs.',
     'For Irembo requirements or fees, prefer official Irembo sources and state uncertainty when verification is unavailable.',
     '',
+    'CONVERSATION HISTORY:',
+    ...history.slice(-12).map((item) => `${item.role.toUpperCase()}: ${item.content}`),
     'USER:',
     message,
     webContext
@@ -135,6 +137,47 @@ app.get('/api/v1/whatsapp/webhook', async (request, reply) => {
   const q = z.object({ 'hub.mode': z.string().optional(), 'hub.verify_token': z.string().optional(), 'hub.challenge': z.string().optional() }).parse(request.query);
   if (q['hub.mode'] !== 'subscribe' || !env.WHATSAPP_VERIFY_TOKEN || q['hub.verify_token'] !== env.WHATSAPP_VERIFY_TOKEN) return reply.code(403).send({ error: 'Webhook verification failed' });
   return reply.type('text/plain').send(q['hub.challenge'] ?? '');
+});
+
+app.post('/api/v1/chat', async (request, reply) => {
+  const user = await auth(request, reply);
+  if (!user) return;
+
+  const body = z.object({
+    message: z.string().min(1).max(10000),
+    sessionId: z.string().optional()
+  }).parse(request.body);
+
+  let session = body.sessionId
+    ? await db.session.findFirst({ where: { id: body.sessionId, userId: user.id } })
+    : await db.session.findFirst({ where: { userId: user.id }, orderBy: { updatedAt: 'desc' } });
+
+  if (!session) {
+    session = await db.session.create({
+      data: { userId: user.id, title: body.message.slice(0, 80) }
+    });
+  }
+
+  const history = await db.message.findMany({
+    where: { sessionId: session.id },
+    orderBy: { createdAt: 'asc' },
+    take: 12,
+    select: { role: true, content: true }
+  });
+
+  await db.message.create({
+    data: { sessionId: session.id, role: 'user', content: body.message }
+  });
+
+  const answer = await generateLumiaReply(body.message, history as Array<{ role: 'user' | 'assistant'; content: string }>);
+  const assistantMessage = await db.message.create({
+    data: { sessionId: session.id, role: 'assistant', content: answer }
+  });
+
+  return {
+    sessionId: session.id,
+    message: assistantMessage.content
+  };
 });
 
 app.post('/api/v1/whatsapp/webhook', async (request, reply) => {
