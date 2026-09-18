@@ -5,11 +5,13 @@ import rateLimit from '@fastify/rate-limit';
 import bcrypt from 'bcryptjs';
 import { SignJWT, jwtVerify } from 'jose';
 import { z } from 'zod';
+import OpenAI from 'openai';
 import { env } from './config.js';
 import { db } from './db.js';
 
 const app = Fastify({ logger: true });
 const secret = new TextEncoder().encode(env.JWT_SECRET);
+const openai = env.OPENAI_API_KEY ? new OpenAI({ apiKey: env.OPENAI_API_KEY }) : null;
 
 type AuthUser = { id: string; email: string; role: 'CUSTOMER'|'AGENT'|'ADMIN' };
 
@@ -84,7 +86,15 @@ async function getWhatsAppSession(phone: string) {
 }
 
 async function generateLumiaReply(message: string) {
-  return `LUMIA received your message: ${message}`;
+  if (!openai) return 'LUMIA is temporarily unavailable. Please try again later.';
+  const completion = await openai.chat.completions.create({
+    model: env.OPENAI_MODEL,
+    messages: [
+      { role: 'system', content: 'You are LUMIA, an AI assistant for the LUMIA Agent Platform. Be concise, helpful, and factual. For Irembo-specific requirements, direct users to official Irembo sources when current verification is needed.' },
+      { role: 'user', content: message }
+    ]
+  });
+  return completion.choices[0]?.message?.content?.trim() || 'I could not generate a response right now.';
 }
 
 app.get('/api/v1/whatsapp/webhook', async (request, reply) => {
