@@ -1,23 +1,12 @@
+'use client';
+
 import Link from 'next/link';
-import { ArrowLeft, LockKeyhole, Mail } from 'lucide-react';
+import { ArrowLeft, LockKeyhole, Mail, Phone, UserRound } from 'lucide-react';
+import { useState } from 'react';
+import { api } from '../../lib/api';
 
 export default function RegisterPage() {
-  return (
-    <main className="min-h-screen bg-slate-50 px-5 py-10">
-      <div className="mx-auto max-w-md">
-        <Link href="/" className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-900"><ArrowLeft size={15} /> Back home</Link>
-        <div className="mt-8 rounded-3xl border border-slate-200 bg-white p-7 shadow-sm">
-          <div className="grid h-12 w-12 place-items-center rounded-2xl bg-slate-950 text-white">L</div>
-          <h1 className="mt-6 text-3xl font-semibold tracking-tight">Create your account</h1>
-          <p className="mt-2 text-sm leading-6 text-slate-500">Start with LUMIA and manage your online tasks from one workspace.</p>
-          <form className="mt-8 space-y-4">
-            <label className="block"><span className="mb-2 block text-sm font-medium">Email</span><div className="relative"><Mail className="absolute left-3 top-3.5 text-slate-400" size={16}/><input type="email" placeholder="you@example.com" className="w-full rounded-2xl border border-slate-200 bg-white px-10 py-3.5 text-sm outline-none focus:border-slate-400"/></div></label>
-            <label className="block"><span className="mb-2 block text-sm font-medium">Password</span><div className="relative"><LockKeyhole className="absolute left-3 top-3.5 text-slate-400" size={16}/><input type="password" placeholder="At least 8 characters" className="w-full rounded-2xl border border-slate-200 bg-white px-10 py-3.5 text-sm outline-none focus:border-slate-400"/></div></label>
-            <button type="submit" className="w-full rounded-2xl bg-slate-950 py-3.5 text-sm font-semibold text-white">Create account</button>
-          </form>
-          <p className="mt-6 text-center text-sm text-slate-500">Already have an account? <Link href="/login" className="font-semibold text-slate-950">Sign in</Link></p>
-        </div>
-      </div>
-    </main>
-  );
+  const [email,setEmail]=useState(''); const [password,setPassword]=useState(''); const [phone,setPhone]=useState(''); const [name,setName]=useState(''); const [error,setError]=useState(''); const [loading,setLoading]=useState(false);
+  async function submit(e:React.FormEvent){e.preventDefault();setError('');setLoading(true);try{const r=await api<{token:string,user:{email:string}}>('/api/v1/auth/register',{method:'POST',body:JSON.stringify({email,password})});localStorage.setItem('lumia_token',r.token);localStorage.setItem('lumia_email',r.user.email);localStorage.setItem('lumia_phone',phone);localStorage.setItem('lumia_name',name);location.href='/dashboard';}catch(err){setError(err instanceof Error?err.message:'Registration failed');}finally{setLoading(false);}}
+  return <main className="min-h-screen bg-slate-50 px-5 py-10"><div className="mx-auto max-w-md"><Link href="/" className="inline-flex items-center gap-2 text-sm text-slate-500"><ArrowLeft size={15}/> Back home</Link><div className="mt-8 rounded-3xl border border-slate-200 bg-white p-7 shadow-sm"><div className="grid h-12 w-12 place-items-center rounded-2xl bg-slate-950 text-white">L</div><h1 className="mt-6 text-3xl font-semibold tracking-tight">Create your account</h1><p className="mt-2 text-sm leading-6 text-slate-500">Start with LUMIA and manage your online tasks from one workspace.</p><form onSubmit={submit} className="mt-8 space-y-4"><label className="block"><span className="mb-2 block text-sm font-medium">Name</span><div className="relative"><UserRound className="absolute left-3 top-3.5 text-slate-400" size={16}/><input required value={name} onChange={e=>setName(e.target.value)} className="w-full rounded-2xl border border-slate-200 px-10 py-3.5 text-sm outline-none"/></div></label><label className="block"><span className="mb-2 block text-sm font-medium">Phone</span><div className="relative"><Phone className="absolute left-3 top-3.5 text-slate-400" size={16}/><input required value={phone} onChange={e=>setPhone(e.target.value)} placeholder="+250..." className="w-full rounded-2xl border border-slate-200 px-10 py-3.5 text-sm outline-none"/></div></label><label className="block"><span className="mb-2 block text-sm font-medium">Email</span><div className="relative"><Mail className="absolute left-3 top-3.5 text-slate-400" size={16}/><input required type="email" value={email} onChange={e=>setEmail(e.target.value)} className="w-full rounded-2xl border border-slate-200 px-10 py-3.5 text-sm outline-none"/></div></label><label className="block"><span className="mb-2 block text-sm font-medium">Password</span><div className="relative"><LockKeyhole className="absolute left-3 top-3.5 text-slate-400" size={16}/><input required minLength={8} type="password" value={password} onChange={e=>setPassword(e.target.value)} className="w-full rounded-2xl border border-slate-200 px-10 py-3.5 text-sm outline-none"/></div></label>{error&&<div className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</div>}<button disabled={loading} className="w-full rounded-2xl bg-slate-950 py-3.5 text-sm font-semibold text-white disabled:opacity-50">{loading?'Creating…':'Create account'}</button></form><p className="mt-6 text-center text-sm text-slate-500">Already have an account? <Link href="/login" className="font-semibold text-slate-950">Sign in</Link></p></div></div></main>;
 }
