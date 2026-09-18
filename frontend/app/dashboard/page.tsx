@@ -78,7 +78,8 @@ export default function DashboardPage() {
         </section>
 
 
-        <Link href="/provider/register" className="mt-5 inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700"><BriefcaseBusiness size={16}/> Become a Service Provider</Link>\n        <Link href="/agent/requests" className="mt-5 inline-flex items-center gap-2 rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm font-semibold text-violet-700"><UserRound size={16}/> Agent Workspace</Link>
+        <Link href="/provider/register" className="mt-5 inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700"><BriefcaseBusiness size={16}/> Become a Service Provider</Link>
+        <Link href="/agent/requests" className="mt-5 inline-flex items-center gap-2 rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm font-semibold text-violet-700"><UserRound size={16}/> Agent Workspace</Link>
         <section className="mt-5 rounded-2xl bg-slate-950 p-5 text-white">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"><div className="max-w-2xl"><div className="flex items-center gap-2 text-sm font-medium text-slate-300"><Bot size={16}/> LUMIA assistant</div><h2 className="mt-3 text-2xl font-semibold">What are you working on?</h2><p className="mt-2 text-sm leading-6 text-slate-400">Start a conversation and let LUMIA help you break the task into practical next steps.</p></div><Link href="/chat" className="inline-flex items-center justify-center rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-slate-950">Start a conversation</Link></div>
         </section>
