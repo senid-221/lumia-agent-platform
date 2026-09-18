@@ -146,8 +146,6 @@ async function generateLumiaReply(message: string, history: Array<{ role: 'user'
     '',
     'CONVERSATION HISTORY:',
     ...history.slice(-12).map((item) => `${item.role.toUpperCase()}: ${item.content}`),
-    'CONVERSATION HISTORY:',
-    ...history.slice(-12).map((item) => `${item.role.toUpperCase()}: ${item.content}`),
     'USER:',
     message,
     webContext
@@ -379,6 +377,26 @@ async function handleWhatsAppCommand(phone: string, user: any, text: string) {
   }
 
   if (selected === 'requests') {
+    if (user.role === 'AGENT') {
+      const agentProfile = await db.iremboAgent.findUnique({ where: { userId: user.id } });
+      if (!agentProfile) {
+        await sendWhatsAppText(phone, 'Nta Agent profile ihujwe na account yawe. Banza wuzuze Agent registration muri LUMIA.');
+        return true;
+      }
+      const requests = await db.serviceRequest.findMany({
+        where: { agentId: agentProfile.id, status: { in: ['MATCHED', 'ACCEPTED', 'IN_PROGRESS'] } },
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+        include: { service: true }
+      });
+      if (!requests.length) {
+        await sendWhatsAppText(phone, 'Nta request nshya ufite ubu.');
+      } else {
+        await sendWhatsAppText(phone, `LUMIA AGENT REQUESTS\n\n${requests.map((r, i) => `${i + 1}. ${r.service.name}\nCustomer: ${r.customerName}\nPhone: ${r.customerPhone}\nStatus: ${r.status}`).join('\n\n')}\n\nKoresha ACCEPT 1, START 1 cyangwa COMPLETE 1.`);
+      }
+      return true;
+    }
+
     const requests = await db.serviceRequest.findMany({
       where: { customerId: user.id },
       orderBy: { createdAt: 'desc' },
@@ -679,8 +697,26 @@ app.post('/api/v1/agent/requests/:id/status', async (request, reply) => {
 
 app.post('/api/v1/irembo-agents/register', async (request, reply) => {
   const user = await auth(request, reply); if (!user) return;
-  const body = z.object({ displayName: z.string().min(2), phone: z.string().min(8), location: z.string().min(2), serviceAreas: z.array(z.string()).min(1), bio: z.string().max(1000).optional() }).parse(request.body);
-  const agent = await db.iremboAgent.upsert({ where: { userId: user.id }, update: body, create: { ...body, userId: user.id } });
+  const body = z.object({
+    displayName: z.string().min(2),
+    phone: z.string().min(8),
+    location: z.string().min(2),
+    serviceAreas: z.array(z.string()).min(1),
+    bio: z.string().max(1000).optional()
+  }).parse(request.body);
+
+  const agent = await db.iremboAgent.upsert({
+    where: { userId: user.id },
+    update: body,
+    create: { ...body, userId: user.id }
+  });
+
+  if (user.role !== 'AGENT') {
+    await db.user.update({ where: { id: user.id }, data: { role: 'AGENT', phone: body.phone } });
+  } else {
+    await db.user.update({ where: { id: user.id }, data: { phone: body.phone } });
+  }
+
   return { agent };
 });
 
