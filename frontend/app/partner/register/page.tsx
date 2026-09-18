@@ -1,0 +1,11 @@
+'use client';
+
+import Link from 'next/link';
+import {useState} from 'react';
+import {api} from '../../lib/api';
+
+export default function PartnerRegisterPage(){
+ const [businessName,setBusinessName]=useState('');const [phone,setPhone]=useState('');const [location,setLocation]=useState('');const [description,setDescription]=useState('');const [message,setMessage]=useState('');const [loading,setLoading]=useState(false);
+ async function submit(e:React.FormEvent){e.preventDefault();setMessage('');const token=localStorage.getItem('lumia_token');if(!token){setMessage('Banza winjire muri LUMIA.');return;}setLoading(true);try{await api('/api/v1/partners/register',{method:'POST',headers:{Authorization:'Bearer '+token},body:JSON.stringify({businessName,phone,location,description:description||undefined})});setMessage('Partner application yawe yoherejwe. Tegereza admin review.');}catch(e){setMessage(e instanceof Error?e.message:'Registration failed.')}finally{setLoading(false)}}
+ return <main className="min-h-screen bg-slate-50 px-5 py-8"><div className="mx-auto max-w-xl"><Link href="/marketplace" className="text-sm text-slate-500">← Marketplace</Link><div className="mt-6 rounded-3xl border bg-white p-7"><h1 className="text-2xl font-semibold">Become a LUMIA Marketplace Partner</h1><p className="mt-2 text-sm leading-6 text-slate-500">Register your real business. Admin must approve it before products can be published.</p><form onSubmit={submit} className="mt-6 space-y-4"><input required value={businessName} onChange={e=>setBusinessName(e.target.value)} placeholder="Business name" className="w-full rounded-xl border p-3.5"/><input required value={phone} onChange={e=>setPhone(e.target.value)} placeholder="+250..." className="w-full rounded-xl border p-3.5"/><input required value={location} onChange={e=>setLocation(e.target.value)} placeholder="Location" className="w-full rounded-xl border p-3.5"/><textarea value={description} onChange={e=>setDescription(e.target.value)} placeholder="Describe your business" className="w-full rounded-xl border p-3.5" rows={4}/><button disabled={loading} className="w-full rounded-xl bg-slate-950 p-3.5 font-semibold text-white">{loading?'Submitting...':'Submit partner application'}</button>{message&&<div className="rounded-xl bg-slate-50 p-3 text-sm">{message}</div>}</form></div></div></main>;
+}
