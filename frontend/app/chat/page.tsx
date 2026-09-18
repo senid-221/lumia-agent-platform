@@ -69,6 +69,8 @@ export default function ChatPage() {
       const token = window.localStorage.getItem('lumia_token');
       if (!token) throw new Error('Please log in first.');
       const email = window.localStorage.getItem('lumia_email') || 'customer@lumia.local';
+      const phone = window.localStorage.getItem('lumia_phone') || '';
+      if (!/^\\+?[0-9]{8,15}$/.test(phone)) throw new Error('Please add a valid WhatsApp phone number to your account first.');
       const services = await api<{ services: Array<{ id: string; name: string }> }>('/api/v1/irembo/services');
       const service = services.services.find((item) => item.name.toLowerCase() === selectedService.toLowerCase());
       if (!service) throw new Error('This Irembo service is not yet linked to the service database.');
@@ -78,7 +80,7 @@ export default function ChatPage() {
         body: JSON.stringify({
           serviceId: service.id,
           customerName: email.split('@')[0],
-          customerPhone: '',
+          customerPhone: phone,
           description: 'Requested through LUMIA AI',
         }),
       });
