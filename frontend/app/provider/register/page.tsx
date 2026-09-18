@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { ArrowLeft, BriefcaseBusiness, MapPin, Phone, UserRound } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { api } from '../../lib/api';
+import { api } from '@/lib/api';
 
 const FALLBACK_SERVICES = ['Hair Fashion','Driving Training','Restaurant Bookers','Shopping Orders','Car Repairing','Motor Repairing','Land Survey','Computer Repairing','Boutique Food Ordering','Website Building','Web Hosting','Teaching Tech','Prompt Generation','Flyer & Graphic Design','Jobs for Seekers'];
 
