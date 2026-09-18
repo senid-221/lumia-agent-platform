@@ -2,8 +2,9 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { ArrowUp, Bot, ChevronDown, Globe2, Image as ImageIcon, Menu, MessageCircle, Music2, Paperclip, Plus, Search, Sparkles, Users, X } from 'lucide-react';
+import { ArrowUp, Bot, Check, ChevronDown, FileText, Globe2, Image as ImageIcon, MapPin, Menu, MessageCircle, Music2, Paperclip, Plus, Search, Sparkles, Users, X } from 'lucide-react';
 import { api } from '../../lib/api';
+import { useSearchParams } from 'next/navigation';
 
 type ChatMessage = { role: 'user' | 'assistant'; content: string };
 
@@ -109,6 +110,20 @@ export default function ChatPage() {
                 <h1 className="mt-2 text-3xl font-medium tracking-[-0.03em] text-slate-100 sm:text-5xl">How Can I Assist You?</h1>
                 <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-500">Ask, research, build, learn, code, or get help with Irembo services.</p>
 
+                {service && (
+                  <div className="mx-auto mt-8 max-w-2xl rounded-2xl border border-violet-400/30 bg-violet-500/5 p-5 text-left">
+                    <div className="text-xs font-semibold uppercase tracking-[.15em] text-violet-300">Selected Irembo service</div>
+                    <div className="mt-2 text-lg font-semibold text-slate-100">{service}</div>
+                    <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                      {[
+                        ['Ibisabwa', <FileText size={15}/>],
+                        ['Igiciro', <Check size={15}/>],
+                        ['Available agents', <MapPin size={15}/>],
+                      ].map(([label, icon]) => <div key={String(label)} className="rounded-xl border border-white/10 bg-white/[.02] p-3 text-xs text-slate-400"><div className="flex items-center gap-2 text-slate-200">{icon}{label}</div><div className="mt-2">Baza LUMIA ibigenzure.</div></div>)}
+                    </div>
+                    <button onClick={() => void sendMessage(`Nshaka ${service}. Mbanza unsobanurire ibisabwa, igiciro n'igihe bifata, hanyuma unyereke Available Agents banyegereye kandi umfashe guhitamo uwo nakorana na we.`)} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white">Tangira application <ChevronDown size={15}/></button>
+                  </div>
+                )}
                 <div className="mt-10 grid gap-3 sm:grid-cols-3">
                   {['Build a website','Research a topic','Find an Irembo service'].map((item) => (
                     <button key={item} onClick={() => void sendMessage(item)} className="rounded-2xl border border-white/10 bg-[#1d1d20] p-4 text-left text-sm text-slate-400 transition hover:border-violet-400/40 hover:bg-[#222225]">
