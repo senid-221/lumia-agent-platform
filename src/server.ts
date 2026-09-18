@@ -368,6 +368,48 @@ async function handleWhatsAppCommand(phone: string, user: any, text: string) {
   const command = normalizeWhatsAppCommand(text);
 
   const session = (await getWhatsAppSession(phone)).session;
+  const platformServicePending = session.title?.match(/PLATFORM_SERVICE=([^|]+)/)?.[1] || null;
+  const platformState = session.title?.match(/PLATFORM_STATE=([^|]+)/)?.[1] || null;
+
+  if (platformState === 'AWAITING_DETAILS' && platformServicePending) {
+    const service = await db.platformService.findUnique({ where: { slug: platformServicePending } });
+    if (!service) {
+      await db.session.update({ where: { id: session.id }, data: { title: 'WhatsApp chat' } });
+      await sendWhatsAppText(phone, 'Iyo service ntikiboneka. Ongera uhitemo service.');
+      return true;
+    }
+    const details = text.trim().replace(/^details\s*:\s*/i, '').trim();
+    if (details.length < 5) {
+      await sendWhatsAppText(phone, 'Andika DETAILS: ibisobanuro birambuye by ibyo ushaka.');
+      return true;
+    }
+    const customerName = user.email.split('@')[0];
+    const provider = await db.iremboAgent.findFirst({
+      where: { status: 'ACTIVE', verificationStatus: 'VERIFIED', serviceAreas: { has: service.name } },
+      orderBy: { updatedAt: 'desc' }
+    });
+    const providerRequest = await db.providerRequest.create({
+      data: {
+        customerId: user.id,
+        serviceId: service.id,
+        customerName,
+        customerPhone: user.phone || phone,
+        details,
+        status: provider ? 'MATCHED' : 'PENDING',
+        providerId: provider?.id
+      }
+    });
+    if (provider) {
+      await db.notification.create({ data: { userId: provider.userId, type: 'PROVIDER_SERVICE_REQUEST', title: 'New LUMIA service request', body: `Customer ${customerName} requested ${service.name}. Phone: ${user.phone || phone}. Details: ${details}` } });
+      await notifyWhatsApp(provider.phone, `LUMIA SERVICE REQUEST\\n\\nService: ${service.name}\\nCustomer: ${customerName}\\nPhone: ${user.phone || phone}\\nDetails: ${details}\\n\\nRequest ID: ${providerRequest.id}`);
+    }
+    await db.session.update({ where: { id: session.id }, data: { title: 'WhatsApp chat' } });
+    await sendWhatsAppText(phone, provider
+      ? `Request yawe yakiriwe kandi ihujwe na ${provider.displayName}.\\nService: ${service.name}\\nStatus: MATCHED\\nRequest ID: ${providerRequest.id}`
+      : `Request yawe yakiriwe. Nta provider verified uboneka kuri ${service.name} ubu; LUMIA izagushyira ku rutonde rwa PENDING.\\nRequest ID: ${providerRequest.id}`);
+    return true;
+  }
+
   const serviceIdPending = session.title?.match(/IREMBO_SERVICE_ID=([^|]+)/)?.[1] || null;
   const pendingAgentId = session.title?.match(/IREMBO_AGENT_ID=([^|]+)/)?.[1] || null;
   const pendingState = session.title?.match(/IREMBO_STATE=([^|]+)/)?.[1] || null;
@@ -476,6 +518,8 @@ async function handleWhatsAppCommand(phone: string, user: any, text: string) {
   };
 
   if (selected && newServiceMessages[selected]) {
+    const platformService = await db.platformService.findFirst({ where: { slug: selected } });
+    await db.session.update({ where: { id: session.id }, data: { title: `WhatsApp chat | PLATFORM_SERVICE=${platformService?.slug || selected} | PLATFORM_STATE=AWAITING_DETAILS` } });
     await sendWhatsAppText(phone, newServiceMessages[selected] + '\\n\\nAndika DETAILS: ibisobanuro birambuye kugirango dutegure request yawe.');
     return true;
   }
@@ -1359,6 +1403,38 @@ app.patch('/api/v1/partner/orders/:id/status', async (request, reply) => {
   await db.notification.create({ data: { userId: order.customerId, type: 'MARKETPLACE_ORDER_STATUS', title: 'Order status updated', body: `Your order ${order.id} is now ${status}.` } });
   await notifyWhatsApp(order.customerPhone, `LUMIA ORDER UPDATE\\n\\nOrder: ${order.id}\\nStatus: ${status}\\nSeller: ${partner.businessName}`);
   return { order: updated };
+});
+
+app.get('/api/v1/provider/requests', async (request, reply) => {
+  const user = await auth(request, reply); if (!user) return;
+  const provider = await db.iremboAgent.findUnique({ where: { userId: user.id } });
+  if (!provider) return reply.code(404).send({ error: 'Provider profile not found' });
+  return { requests: await db.providerRequest.findMany({ where: { providerId: provider.id }, orderBy: { createdAt: 'desc' }, include: { service: true, customer: { select: { email: true, phone: true } } } }) };
+});
+
+app.patch('/api/v1/provider/requests/:id/status', async (request, reply) => {
+  const user = await auth(request, reply); if (!user) return;
+  const provider = await db.iremboAgent.findUnique({ where: { userId: user.id } });
+  if (!provider) return reply.code(404).send({ error: 'Provider profile not found' });
+  const { id } = z.object({ id: z.string() }).parse(request.params);
+  const { status } = z.object({ status: z.enum(['ACCEPTED','IN_PROGRESS','COMPLETED','CANCELLED']) }).parse(request.body);
+  const existing = await db.providerRequest.findFirst({ where: { id, providerId: provider.id }, include: { service: true } });
+  if (!existing) return reply.code(404).send({ error: 'Provider request not found' });
+  const updated = await db.providerRequest.update({ where: { id }, data: { status } });
+  await db.notification.create({ data: { userId: updated.customerId, type: 'PROVIDER_REQUEST_STATUS', title: 'Service request updated', body: `${provider.displayName} changed ${existing.service.name} to ${status}.` } });
+  await notifyWhatsApp(updated.customerPhone, `LUMIA SERVICE UPDATE\\n\\nService: ${existing.service.name}\\nProvider: ${provider.displayName}\\nStatus: ${status}`);
+  return { request: updated };
+});
+
+app.post('/api/v1/provider/requests', async (request, reply) => {
+  const user = await auth(request, reply); if (!user) return;
+  const body = z.object({ serviceId: z.string(), customerName: z.string().min(2), customerPhone: z.string().regex(/^\\+?[0-9]{8,15}$/), details: z.string().min(5).max(3000), location: z.string().max(200).optional() }).parse(request.body);
+  const service = await db.platformService.findUnique({ where: { id: body.serviceId } });
+  if (!service) return reply.code(404).send({ error: 'Platform service not found' });
+  const provider = await db.iremboAgent.findFirst({ where: { status:'ACTIVE', verificationStatus:'VERIFIED', serviceAreas:{has:service.name}, ...(body.location ? { location:{contains:body.location,mode:'insensitive'} } : {}) }, orderBy:{updatedAt:'desc'} });
+  const created = await db.providerRequest.create({ data:{...body, customerId:user.id, providerId:provider?.id, status:provider?'MATCHED':'PENDING'} });
+  if(provider) await notifyWhatsApp(provider.phone, `LUMIA SERVICE REQUEST\\n\\nService: ${service.name}\\nCustomer: ${body.customerName}\\nPhone: ${body.customerPhone}\\nDetails: ${body.details}\\nRequest ID: ${created.id}`);
+  return { requestId: created.id, status: created.status, provider: provider ? { id:provider.id, displayName:provider.displayName, phone:provider.phone, location:provider.location } : null };
 });
 
 app.get('/api/v1/admin/overview', async (request, reply) => {
