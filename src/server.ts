@@ -242,6 +242,16 @@ app.post('/api/v1/notifications/:id/read', async (request, reply) => {
 
 app.get('/api/v1/irembo/services', async () => ({ services: await db.iremboService.findMany({ where: { active: true }, orderBy: [{ category: 'asc' }, { name: 'asc' }] }) }));
 
+app.get('/api/v1/irembo/service-requests', async (request, reply) => {
+  const user = await auth(request, reply); if (!user) return;
+  const requests = await db.serviceRequest.findMany({
+    where: { customerId: user.id },
+    orderBy: { createdAt: 'desc' },
+    include: { service: true, agent: true }
+  });
+  return { requests };
+});
+
 app.get('/api/v1/irembo-agents/plans', async () => ({ plans: await db.agentPlan.findMany({ where: { active: true }, orderBy: { priceRwf: 'asc' } }) }));
 
 app.get('/api/v1/irembo-agents', async (request) => {
