@@ -73,27 +73,6 @@ async function markWhatsAppRead(to: string, messageId?: string) {
   }
 }
 
-async function sendWhatsAppTyping(to: string) {
-  if (!env.WHATSAPP_ACCESS_TOKEN || !env.WHATSAPP_PHONE_NUMBER_ID) return;
-  const url = `https://graph.facebook.com/${env.WHATSAPP_GRAPH_VERSION}/${env.WHATSAPP_PHONE_NUMBER_ID}/messages`;
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${env.WHATSAPP_ACCESS_TOKEN}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      messaging_product: 'whatsapp',
-      to,
-      typing_indicator: { type: 'text' }
-    })
-  });
-  if (!response.ok) {
-    const detail = await response.text();
-    app.log.warn({ status: response.status, detail }, 'WhatsApp typing indicator failed');
-  }
-}
-
 async function sendWhatsAppText(to: string, body: string) {
   const accessToken = env.WHATSAPP_ACCESS_TOKEN?.trim();
   const phoneNumberId = env.WHATSAPP_PHONE_NUMBER_ID?.trim();
@@ -684,7 +663,6 @@ app.post('/api/v1/whatsapp/webhook', async (request, reply) => {
     await db.message.create({ data: { sessionId: session.id, role: 'user', content: text } });
 
     await markWhatsAppRead(from, messageId);
-    await sendWhatsAppTyping(from);
 
     const handled = await handleWhatsAppCommand(from, user, text);
     if (handled) {
