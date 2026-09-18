@@ -8,7 +8,7 @@ type IremboCatalogEntry = {
   description: string;
   requirements: string[];
   feeRwf: number | null;
-  processingTime: string;
+  processingTime: string | null;
   accountRequired: boolean | null;
   officialUrl: string;
 };
