@@ -6,14 +6,15 @@ import bcrypt from 'bcryptjs';
 import { SignJWT, jwtVerify } from 'jose';
 import { z } from 'zod';
 import { GoogleGenAI } from '@google/genai';
-import Exa from 'exa-js';
+import * as ExaModule from 'exa-js';
 import { env } from './config.js';
 import { db } from './db.js';
 
 const app = Fastify({ logger: true });
 const secret = new TextEncoder().encode(env.JWT_SECRET);
 const gemini = env.GEMINI_API_KEY ? new GoogleGenAI({ apiKey: env.GEMINI_API_KEY }) : null;
-const exa = env.EXA_API_KEY ? new Exa(env.EXA_API_KEY) : null;
+const ExaClient = (ExaModule as any).default ?? ExaModule;
+const exa = env.EXA_API_KEY ? new ExaClient(env.EXA_API_KEY) : null;
 
 type AuthUser = { id: string; email: string; role: 'CUSTOMER'|'AGENT'|'ADMIN' };
 
@@ -89,7 +90,7 @@ async function getWhatsAppSession(phone: string) {
 
 async function searchWeb(query: string) {
   if (!exa) return [];
-  const response = await exa.search(query, { numResults: 5, type: 'auto', highlights: true });
+  const response = await exa.search(query, { numResults: 5, type: 'auto', contents: { highlights: true } });
   return response.results.map((r: any) => ({
     title: r.title,
     url: r.url,
