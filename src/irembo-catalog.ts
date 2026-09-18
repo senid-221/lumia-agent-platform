@@ -116,6 +116,187 @@ export const OFFICIAL_IREMBO_CATALOG: IremboCatalogEntry[] = [
   }
 ];
 
+
+  {
+    slug: 'birth-certificate',
+    name: 'Birth Certificate',
+    category: 'Family',
+    institution: 'Ministry of Local Government (MINALOC)',
+    description: 'Apply for an official birth certificate through IremboGov.',
+    requirements: ['National ID number or Citizen Application Number.', 'Valid phone number and/or email address.'],
+    feeRwf: 500,
+    processingTime: '1 working day',
+    accountRequired: true,
+    officialUrl: 'https://support.irembo.gov.rw/en/support/solutions/articles/47001193156-how-to-apply-for-a-birth-certificate'
+  },
+  {
+    slug: 'birth-record',
+    name: 'Birth Record',
+    category: 'Family',
+    institution: 'Ministry of Local Government (MINALOC)',
+    description: 'Apply for a birth record certificate through IremboGov.',
+    requirements: ['National ID, Citizen Application Number, or National Identification Number.', 'Valid phone number, email address, or both.'],
+    feeRwf: 1500,
+    processingTime: '1 working day',
+    accountRequired: true,
+    officialUrl: 'https://support.irembo.gov.rw/en/support/solutions/articles/47001200821-how-to-apply-for-a-birth-record'
+  },
+  {
+    slug: 'marriage-certificate',
+    name: 'Marriage Certificate',
+    category: 'Family',
+    institution: 'Ministry of Local Government (MINALOC)',
+    description: 'Apply for an official marriage certificate through IremboGov.',
+    requirements: ['National ID number.', 'Spouse identification details.', 'Legal marriage details.', 'Valid phone number and/or email address.'],
+    feeRwf: 500,
+    processingTime: '1 working day',
+    accountRequired: true,
+    officialUrl: 'https://support.irembo.gov.rw/en/support/solutions/articles/47001193158-how-to-apply-for-a-marriage-certificate'
+  },
+  {
+    slug: 'marriage-record',
+    name: 'Marriage Record',
+    category: 'Family',
+    institution: 'Ministry of Local Government (MINALOC)',
+    description: 'Apply for a marriage record certificate through IremboGov.',
+    requirements: ['National ID, Citizen Application Number, National Identification Number, or eligible spouse identification.', 'Marriage proof/document.', 'Valid phone number or email address.'],
+    feeRwf: 1500,
+    processingTime: '1 working day',
+    accountRequired: true,
+    officialUrl: 'https://support.irembo.gov.rw/en/support/solutions/articles/47001200824-how-to-apply-for-a-marriage-record'
+  },
+  {
+    slug: 'certificate-of-being-single',
+    name: 'Certificate of Being Single',
+    category: 'Family',
+    institution: 'Ministry of Local Government (MINALOC)',
+    description: 'Apply for an official certificate declaring that an individual is single.',
+    requirements: ['National ID number.', 'Civil status must be SINGLE in the NIDA system.', 'Valid phone number and/or email address.'],
+    feeRwf: 500,
+    processingTime: '1 working day',
+    accountRequired: true,
+    officialUrl: 'https://support.irembo.gov.rw/en/support/solutions/articles/47001200472-how-to-apply-for-a-certificate-of-being-single'
+  },
+  {
+    slug: 'certificate-of-residence',
+    name: 'Certificate of Residence',
+    category: 'Family',
+    institution: 'Ministry of Local Government (MINALOC)',
+    description: 'Apply for a certificate confirming where a person resides.',
+    requirements: ['Rwandans: National ID or Citizen Application Number for children.', 'Foreigners: passport number.', 'Valid phone number and email address, or both.'],
+    feeRwf: 1500,
+    processingTime: '1 working day',
+    accountRequired: true,
+    officialUrl: 'https://support.irembo.gov.rw/en/support/solutions/articles/47001200861-how-to-apply-for-a-certificate-of-residence'
+  },
+  {
+    slug: 'certificate-of-being-alive',
+    name: 'Certificate of Being Alive',
+    category: 'Identification',
+    institution: 'Ministry of Local Government (MINALOC)',
+    description: 'Apply for an e-certificate confirming that a person is alive.',
+    requirements: ['Adults: National ID number.', 'Minors: Child Application Number.', 'Valid phone number or email address.'],
+    feeRwf: 0,
+    processingTime: '1 working day',
+    accountRequired: true,
+    officialUrl: 'https://support.irembo.gov.rw/en/support/solutions/articles/47001205882-how-to-apply-for-a-certificate-of-being-alive'
+  },
+  {
+    slug: 'marriage-declaration',
+    name: 'Marriage Declaration',
+    category: 'Family',
+    institution: 'Ministry of Local Government (MINALOC)',
+    description: 'Apply for a marriage declaration before legal marriage registration.',
+    requirements: ['Birth certificates for both applicants.', 'Certificate of being single for both applicants.', 'Divorce or widow/widower certificate where applicable.', 'Identification documents and passport-size photo where applicable.'],
+    feeRwf: null,
+    processingTime: null,
+    accountRequired: null,
+    officialUrl: 'https://support.irembo.gov.rw/en/support/solutions/articles/47001212849-you-are-planning-to-get-married-and-you-want-to-know-how-to-apply-for-a-marriage-declaration-'
+  },
+  {
+    slug: 'certificate-of-succession',
+    name: 'Certificate of Succession',
+    category: 'Family',
+    institution: 'Ministry of Local Government (MINALOC)',
+    description: 'Apply for a certificate of succession through IremboGov.',
+    requirements: ['Exact requirements depend on the succession application and documents requested by IremboGov.'],
+    feeRwf: null,
+    processingTime: null,
+    accountRequired: null,
+    officialUrl: 'https://support.irembo.gov.rw/en/support/solutions/folders/47000777852'
+  },
+  {
+    slug: 'certificate-of-widow-widower',
+    name: 'Certificate of Widow/Widower',
+    category: 'Family',
+    institution: 'Ministry of Local Government (MINALOC)',
+    description: 'Apply for a certificate of widow or widower through IremboGov.',
+    requirements: ['Exact requirements depend on the application and supporting documents requested by IremboGov.'],
+    feeRwf: null,
+    processingTime: null,
+    accountRequired: null,
+    officialUrl: 'https://support.irembo.gov.rw/en/support/solutions/folders/47000777852'
+  },
+  {
+    slug: 'certificate-of-cohabitation',
+    name: 'Certificate of Cohabitation',
+    category: 'Family',
+    institution: 'Ministry of Local Government (MINALOC)',
+    description: 'Apply for a certificate of cohabitation through IremboGov.',
+    requirements: ['Exact requirements depend on the application and supporting documents requested by IremboGov.'],
+    feeRwf: null,
+    processingTime: null,
+    accountRequired: null,
+    officialUrl: 'https://support.irembo.gov.rw/en/support/solutions/folders/47000777852'
+  },
+  {
+    slug: 'guardianship-record',
+    name: 'Guardianship Record',
+    category: 'Family',
+    institution: 'Ministry of Local Government (MINALOC)',
+    description: 'Apply for a guardianship record through IremboGov.',
+    requirements: ['Exact requirements depend on the guardianship application and supporting documents requested by IremboGov.'],
+    feeRwf: null,
+    processingTime: null,
+    accountRequired: null,
+    officialUrl: 'https://support.irembo.gov.rw/en/support/solutions/folders/47000777852'
+  },
+  {
+    slug: 'adoption-record',
+    name: 'Adoption Record',
+    category: 'Family',
+    institution: 'Ministry of Local Government (MINALOC)',
+    description: 'Apply for an adoption record through IremboGov.',
+    requirements: ['Exact requirements depend on the adoption application and supporting documents requested by IremboGov.'],
+    feeRwf: null,
+    processingTime: null,
+    accountRequired: null,
+    officialUrl: 'https://support.irembo.gov.rw/en/support/solutions/folders/47000777852'
+  },
+  {
+    slug: 'title-transfer-court-judgement',
+    name: 'Title Transfer – Copy of Court Judgement',
+    category: 'Land Services',
+    institution: 'National Land Authority (NLA)',
+    description: 'Transfer land rights following a court judgement through IremboGov.',
+    requirements: ['IremboGov account for self-application.', 'Landowner National ID matching the parcel UPI.', 'Court decision and/or judgement execution report.', 'Land documents and applicable transferee civil-status document.'],
+    feeRwf: 0,
+    processingTime: '7 working days',
+    accountRequired: true,
+    officialUrl: 'https://support.irembo.gov.rw/en/support/solutions/articles/47001218291-how-to-apply-for-title-transfer-copy-of-court-judgement'
+  },
+  {
+    slug: 'motor-vehicle-inspection-first-visit',
+    name: 'Motor Vehicle Inspection (MVI) First Visit Appointment',
+    category: 'Car and Motor Services',
+    institution: 'Rwanda National Police (RNP) and Rwanda Environment Management Authority (REMA)',
+    description: 'Book and pay for a first motor vehicle inspection appointment covering technical and emission inspection.',
+    requirements: ['Clear outstanding traffic fines.', 'Vehicle plate number.', 'TIN.', 'Company code where applicable.'],
+    feeRwf: null,
+    processingTime: 'Appointment confirmed instantly after successful payment',
+    accountRequired: false,
+    officialUrl: 'https://support.irembo.gov.rw/en/support/solutions/articles/47001302372-frequently-asked-questions-about-motor-vehicle-inspection-mvi-1st-visit-appointment'
+  },
 export async function ensureOfficialIremboCatalog() {
   for (const service of OFFICIAL_IREMBO_CATALOG) {
     await db.iremboService.upsert({
