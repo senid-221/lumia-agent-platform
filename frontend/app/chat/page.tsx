@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowLeft, Bot, Plus, Send, Sparkles } from 'lucide-react';
 import { useState } from 'react';
+import { ArrowUp, Bot, ChevronDown, Globe2, Image as ImageIcon, Menu, MessageCircle, Music2, Paperclip, Plus, Search, Sparkles, Users, X } from 'lucide-react';
 import { api } from '../../lib/api';
 
 type ChatMessage = { role: 'user' | 'assistant'; content: string };
@@ -14,12 +14,12 @@ export default function ChatPage() {
   const [sessionId, setSessionId] = useState<string | undefined>(() =>
     typeof window !== 'undefined' ? window.localStorage.getItem('lumia_chat_session') ?? undefined : undefined
   );
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [error, setError] = useState('');
 
   async function sendMessage(text?: string) {
     const value = (text ?? message).trim();
     if (!value || loading) return;
-
     setMessage('');
     setError('');
     setMessages((items) => [...items, { role: 'user', content: value }]);
@@ -28,13 +28,11 @@ export default function ChatPage() {
     try {
       const token = window.localStorage.getItem('lumia_token');
       if (!token) throw new Error('Please log in first.');
-
       const result = await api<{ sessionId: string; message: string }>('/api/v1/chat', {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: JSON.stringify({ message: value, sessionId }),
       });
-
       setSessionId(result.sessionId);
       window.localStorage.setItem('lumia_chat_session', result.sessionId);
       setMessages((items) => [...items, { role: 'assistant', content: result.message }]);
@@ -50,53 +48,112 @@ export default function ChatPage() {
     window.localStorage.removeItem('lumia_chat_session');
     setMessages([]);
     setError('');
+    setSidebarOpen(false);
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-950">
-      <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-5 py-4">
-          <Link href="/dashboard" className="inline-flex items-center gap-2 text-sm text-slate-500"><ArrowLeft size={15}/> Dashboard</Link>
-          <div className="flex items-center gap-2 text-sm font-semibold"><div className="grid h-8 w-8 place-items-center rounded-xl bg-slate-950 text-white"><Sparkles size={15}/></div>LUMIA</div>
-          <button onClick={newChat} type="button" className="grid h-9 w-9 place-items-center rounded-full border border-slate-200 bg-white" aria-label="New chat"><Plus size={17}/></button>
-        </div>
-      </header>
+    <main className="flex h-screen overflow-hidden bg-[#17171a] text-slate-100">
+      <button onClick={() => setSidebarOpen(!sidebarOpen)} className="fixed left-4 top-4 z-50 grid h-9 w-9 place-items-center rounded-xl border border-white/10 bg-[#202024] lg:hidden">
+        {sidebarOpen ? <X size={16}/> : <Menu size={16}/>}
+      </button>
 
-      <div className="mx-auto flex min-h-[calc(100vh-73px)] max-w-5xl flex-col px-4 sm:px-5">
-        <div className="flex-1 py-8">
+      <aside className={`fixed inset-y-0 left-0 z-40 w-72 border-r border-white/5 bg-[#151518] p-4 transition-transform lg:static lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className="flex h-full flex-col">
+          <div className="flex items-center gap-3 px-2">
+            <div className="grid h-9 w-9 place-items-center rounded-xl bg-violet-500/15 text-violet-300"><Sparkles size={17}/></div>
+            <div><div className="text-sm font-semibold">LUMIA</div><div className="text-[10px] tracking-[.16em] text-slate-500">AI PLATFORM</div></div>
+          </div>
+
+          <div className="mt-4 flex items-center gap-2">
+            <button onClick={newChat} className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-violet-400/60 bg-transparent px-3 py-2.5 text-sm text-slate-100 hover:bg-violet-500/10"><Plus size={15}/> New Chat</button>
+            <button aria-label="Search" className="grid h-10 w-10 place-items-center rounded-xl border border-white/5 bg-white/[.02] text-slate-400"><Search size={15}/></button>
+          </div>
+
+          <nav className="mt-5 space-y-1 text-sm">
+            <div className="flex items-center gap-3 rounded-xl bg-white/[.06] px-3 py-2.5 text-white"><MessageCircle size={15}/> Chat</div>
+            <Link href="/services" onClick={() => setSidebarOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-slate-500 hover:bg-white/[.04] hover:text-slate-200"><Globe2 size={15}/> Irembo</Link>
+            <Link href="/agents" onClick={() => setSidebarOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-slate-500 hover:bg-white/[.04] hover:text-slate-200"><Users size={15}/> Agents</Link>
+          </nav>
+
+          <div className="mt-6 border-t border-white/5 pt-4">
+            <div className="px-2 text-[10px] font-semibold uppercase tracking-[.18em] text-slate-600">Pinned</div>
+            <div className="mt-2 space-y-1 text-xs text-slate-500">
+              {['Website strategy','Learn coding','Irembo services'].map((item) => <button key={item} className="w-full truncate rounded-lg px-3 py-2 text-left hover:bg-white/[.04] hover:text-slate-200">{item}</button>)}
+            </div>
+          </div>
+
+          <div className="mt-5 border-t border-white/5 pt-4">
+            <div className="px-2 text-[10px] font-semibold uppercase tracking-[.18em] text-slate-600">Today</div>
+            <div className="mt-2 rounded-lg bg-white/[.04] px-3 py-2 text-xs text-slate-300">Current conversation</div>
+          </div>
+
+          <div className="mt-auto rounded-2xl border border-white/5 bg-[#202024] p-3">
+            <div className="text-xs font-semibold text-slate-200">LUMIA Workspace</div>
+            <div className="mt-1 text-[11px] leading-5 text-slate-500">Gemini + Exa connected through your backend.</div>
+            <Link href="/dashboard" className="mt-3 inline-flex text-xs text-violet-300">Dashboard →</Link>
+          </div>
+        </div>
+      </aside>
+
+      <section className="relative flex min-w-0 flex-1 flex-col">
+        <div className="flex items-center justify-end border-b border-white/5 px-5 py-3 lg:px-7">
+          <div className="rounded-full border border-white/10 bg-white/[.03] px-3 py-1.5 text-xs text-slate-400">LUMIA AI</div>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto">
           {messages.length === 0 ? (
-            <div className="mx-auto max-w-2xl pt-16 text-center">
-              <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-slate-950 text-white"><Bot size={23}/></div>
-              <h1 className="mt-6 text-4xl font-semibold tracking-tight">How can I help?</h1>
-              <p className="mt-3 text-slate-500">Ask LUMIA about learning, coding, websites, opportunities, research, or Irembo services.</p>
-              <div className="mt-8 grid gap-3 text-left sm:grid-cols-2">
-                {['Help me plan a website','Explain something I want to learn','Find an Irembo service','Help me prepare a job application'].map((item) => (
-                  <button key={item} onClick={() => void sendMessage(item)} type="button" className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-700 hover:border-slate-400">{item}</button>
-                ))}
+            <div className="flex min-h-full items-center justify-center px-4 py-12">
+              <div className="w-full max-w-3xl text-center">
+                <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-violet-500/10 text-violet-300 shadow-[0_0_55px_rgba(168,85,247,.18)]"><Sparkles size={24}/></div>
+                <div className="mt-5 text-sm text-slate-500">Welcome to LUMIA AI</div>
+                <h1 className="mt-2 text-3xl font-medium tracking-[-0.03em] text-slate-100 sm:text-5xl">How Can I Assist You?</h1>
+                <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-500">Ask, research, build, learn, code, or get help with Irembo services.</p>
+
+                <div className="mt-10 grid gap-3 sm:grid-cols-3">
+                  {['Build a website','Research a topic','Find an Irembo service'].map((item) => (
+                    <button key={item} onClick={() => void sendMessage(item)} className="rounded-2xl border border-white/10 bg-[#1d1d20] p-4 text-left text-sm text-slate-400 transition hover:border-violet-400/40 hover:bg-[#222225]">
+                      <div className="mb-9 text-slate-600">{item === 'Research a topic' ? <Search size={16}/> : item === 'Find an Irembo service' ? <Globe2 size={16}/> : <Bot size={16}/>}</div>
+                      {item}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           ) : (
-            <div className="mx-auto max-w-2xl space-y-5">
+            <div className="mx-auto max-w-3xl space-y-6 px-4 py-8">
               {messages.map((item, i) => (
                 <div key={`${item.role}-${i}`} className={item.role === 'user' ? 'flex justify-end' : 'flex items-start gap-3'}>
-                  {item.role === 'assistant' && <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-slate-200 bg-white"><Bot size={16}/></div>}
-                  <div className={item.role === 'user' ? 'max-w-[85%] rounded-3xl rounded-br-lg bg-slate-950 px-5 py-3.5 text-sm leading-6 text-white whitespace-pre-wrap' : 'max-w-[85%] rounded-3xl rounded-bl-lg border border-slate-200 bg-white px-5 py-4 text-sm leading-6 text-slate-700 whitespace-pre-wrap'}>{item.content}</div>
+                  {item.role === 'assistant' && <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-white/10 bg-[#202024] text-violet-300"><Bot size={16}/></div>}
+                  <div className={item.role === 'user' ? 'max-w-[85%] rounded-3xl rounded-br-lg bg-violet-500 px-5 py-3.5 text-sm leading-6 text-white whitespace-pre-wrap' : 'max-w-[85%] rounded-3xl rounded-bl-lg border border-white/10 bg-[#202024] px-5 py-4 text-sm leading-6 text-slate-200 whitespace-pre-wrap'}>{item.content}</div>
                 </div>
               ))}
-              {loading && <div className="flex items-start gap-3"><div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-slate-200 bg-white"><Bot size={16}/></div><div className="rounded-3xl rounded-bl-lg border border-slate-200 bg-white px-5 py-4 text-sm text-slate-400">LUMIA is responding…</div></div>}
-              {error && <div className="text-sm text-red-600">{error}</div>}
+              {loading && <div className="flex items-start gap-3"><div className="grid h-9 w-9 place-items-center rounded-xl border border-white/10 bg-[#202024] text-violet-300"><Bot size={16}/></div><div className="rounded-3xl rounded-bl-lg border border-white/10 bg-[#202024] px-5 py-4 text-sm text-slate-500">LUMIA is responding…</div></div>}
+              {error && <div className="text-sm text-red-400">{error}</div>}
             </div>
           )}
         </div>
 
-        <form onSubmit={(e) => { e.preventDefault(); void sendMessage(); }} className="sticky bottom-0 mx-auto w-full max-w-2xl pb-5">
-          <div className="flex items-end gap-2 rounded-3xl border border-slate-200 bg-white p-2 shadow-lg">
-            <textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Message LUMIA..." rows={1} disabled={loading} className="max-h-32 min-h-12 flex-1 resize-none bg-transparent px-4 py-3 text-sm outline-none"/>
-            <button aria-label="Send" type="submit" className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-slate-950 text-white disabled:opacity-40" disabled={!message.trim() || loading}><Send size={17}/></button>
+        <form onSubmit={(e) => { e.preventDefault(); void sendMessage(); }} className="border-t border-white/5 bg-gradient-to-t from-[#17171a] via-[#17171a]/95 to-transparent px-4 pb-5 pt-3 sm:px-6">
+          <div className="mx-auto max-w-3xl">
+            <div className="rounded-3xl border border-violet-400/70 bg-[#151518] p-2 shadow-[0_0_45px_rgba(168,85,247,.12)]">
+              <textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Ask LUMIA anything or write your request..." rows={1} disabled={loading} className="min-h-12 w-full resize-none bg-transparent px-4 py-3 text-sm text-slate-200 outline-none placeholder:text-slate-600"/>
+              <div className="flex items-center justify-between px-2 pb-1">
+                <div className="flex items-center gap-1 text-slate-500">
+                  <button type="button" className="grid h-8 w-8 place-items-center rounded-lg hover:bg-white/5"><MessageCircle size={14}/></button>
+                  <button type="button" className="grid h-8 w-8 place-items-center rounded-lg hover:bg-white/5"><ImageIcon size={14}/></button>
+                  <button type="button" className="grid h-8 w-8 place-items-center rounded-lg hover:bg-white/5"><Music2 size={14}/></button>
+                  <button type="button" className="grid h-8 w-8 place-items-center rounded-lg hover:bg-white/5"><Paperclip size={14}/></button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="hidden items-center gap-1 text-xs text-slate-500 sm:flex">Gemini <ChevronDown size={13}/></div>
+                  <button aria-label="Send" type="submit" disabled={!message.trim() || loading} className="grid h-9 w-9 place-items-center rounded-xl bg-violet-500 text-white shadow-lg shadow-violet-500/20 disabled:opacity-30"><ArrowUp size={16}/></button>
+                </div>
+              </div>
+            </div>
+            <div className="mt-2 text-center text-[11px] text-slate-600">LUMIA can make mistakes. Verify important information when needed.</div>
           </div>
-          <div className="mt-2 text-center text-[11px] text-slate-400">LUMIA can make mistakes. Verify important information with official sources.</div>
         </form>
-      </div>
+      </section>
     </main>
   );
 }
