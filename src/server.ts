@@ -251,7 +251,7 @@ async function generateLumiaReply(message: string, history: Array<{ role: 'user'
           model,
           messages: [{ role: 'user', content: prompt }],
           temperature: 0.2,
-          max_tokens: 1800
+          max_tokens: 700
         })
       });
 
