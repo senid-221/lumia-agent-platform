@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { ArrowLeft, CheckCircle2, Clock3, MapPin, Phone, ShieldCheck, UserRound } from 'lucide-react';
 import { api } from '@/lib/api';
 
-type Request = {
+type ProviderRequest = {\n  id: string;\n  status: string;\n  customerName: string;\n  customerPhone: string;\n  location: string | null;\n  details: string;\n  createdAt: string;\n  service: { name: string };\n  customer: { email: string };\n};\n\ntype Request = {
   id: string;
   status: string;
   customerName: string;
@@ -31,7 +31,7 @@ export default function AgentRequestsPage() {
     try{
       const [irembo, provider] = await Promise.all([
         api<{requests:Request[]}>('/api/v1/agent/requests',{headers:{Authorization:'Bearer '+token}}),
-        api<{requests:Array<{id:string,status:string,customerName:string,customerPhone:string,location:string|null,details:string,createdAt:string,service:{name:string},customer:{email:string}}}>('/api/v1/provider/requests',{headers:{Authorization:'Bearer '+token}}).catch(()=>({requests:[]}))
+        api<{requests:ProviderRequest[]}>('/api/v1/provider/requests',{headers:{Authorization:'Bearer '+token}}).catch(()=>({requests:[]}))
       ]);
       setRequests([
         ...irembo.requests.map(r=>({...r,source:'irembo' as const})),
