@@ -1175,6 +1175,263 @@ app.post('/api/v1/irembo/service-requests/:id/choose-agent', async (request, rep
   return { request: updated };
 });
 
+
+function requireAdmin(user: AuthUser, reply: any) {
+  if (user.role !== 'ADMIN') {
+    reply.code(403).send({ error: 'Admin access required' });
+    return false;
+  }
+  return true;
+}
+
+const PLATFORM_SERVICES = [
+  ['hair-fashion', 'Hair Fashion', 'Salon, hair styling, braiding, haircut and related services.'],
+  ['driving-training', 'Driving Training', 'Driving theory and practical training.'],
+  ['restaurant-bookers', 'Restaurant Bookers', 'Restaurant discovery, menu help and reservation requests.'],
+  ['shopping-orders', 'Shopping Orders', 'Product discovery and customer purchase requests.'],
+  ['car-repairing', 'Car Repairing', 'Car diagnostics and repair provider requests.'],
+  ['motor-repairing', 'Motor Repairing', 'Motorcycle diagnostics and repair provider requests.'],
+  ['land-survey', 'Land Survey', 'Land measurement and surveying provider requests.'],
+  ['computer-repairing', 'Computer Repairing', 'Computer troubleshooting and repair provider requests.'],
+  ['boutique-food-ordering', 'Boutique Food Ordering', 'Food and grocery ordering from listed providers.'],
+  ['website-building', 'Website Building', 'Website design and development requests.'],
+  ['web-hosting', 'Web Hosting', 'Website hosting and domain support requests.'],
+  ['teaching-tech', 'Teaching Tech', 'Technology learning and teacher matching.'],
+  ['prompt-generation', 'Prompt Generation', 'Professional AI prompt creation.'],
+  ['flyer-graphic-design', 'Flyer & Graphic Design', 'Flyer and graphic design requests.'],
+  ['jobs-for-seekers', 'Jobs for Seekers', 'Job opportunity discovery and application support.']
+] as const;
+
+app.get('/api/v1/platform/services', async () => {
+  const existing = await db.platformService.findMany({ where: { active: true }, orderBy: { name: 'asc' } });
+  if (existing.length) return { services: existing };
+  return { services: PLATFORM_SERVICES.map(([slug, name, description]) => ({ id: slug, slug, name, description, active: true })) };
+});
+
+app.post('/api/v1/partners/register', async (request, reply) => {
+  const user = await auth(request, reply); if (!user) return;
+  const body = z.object({
+    businessName: z.string().min(2).max(120),
+    phone: z.string().regex(/^\\+?[0-9]{8,15}$/),
+    location: z.string().min(2).max(200),
+    description: z.string().max(1500).optional()
+  }).parse(request.body);
+  const partner = await db.partner.upsert({
+    where: { userId: user.id },
+    update: { ...body, status: 'PENDING' },
+    create: { ...body, userId: user.id, status: 'PENDING' }
+  });
+  return { partner, message: 'Partner application submitted for admin review.' };
+});
+
+app.get('/api/v1/partners/me', async (request, reply) => {
+  const user = await auth(request, reply); if (!user) return;
+  const partner = await db.partner.findUnique({ where: { userId: user.id }, include: { products: { orderBy: { createdAt: 'desc' } } } });
+  if (!partner) return reply.code(404).send({ error: 'Partner profile not found' });
+  return { partner };
+});
+
+app.post('/api/v1/partners/products', async (request, reply) => {
+  const user = await auth(request, reply); if (!user) return;
+  const partner = await db.partner.findUnique({ where: { userId: user.id } });
+  if (!partner || partner.status !== 'APPROVED') return reply.code(403).send({ error: 'Approved partner access required' });
+  const body = z.object({
+    name: z.string().min(2).max(160),
+    category: z.string().min(2).max(100),
+    description: z.string().max(2000).optional(),
+    priceRwf: z.number().int().nonnegative().optional(),
+    imageUrl: z.string().url().optional(),
+    productUrl: z.string().url().optional(),
+    stock: z.number().int().nonnegative().default(0)
+  }).parse(request.body);
+  const product = await db.product.create({ data: { ...body, partnerId: partner.id, status: body.stock > 0 ? 'ACTIVE' : 'OUT_OF_STOCK' } });
+  return { product };
+});
+
+app.patch('/api/v1/partners/products/:id', async (request, reply) => {
+  const user = await auth(request, reply); if (!user) return;
+  const partner = await db.partner.findUnique({ where: { userId: user.id } });
+  if (!partner || partner.status !== 'APPROVED') return reply.code(403).send({ error: 'Approved partner access required' });
+  const { id } = z.object({ id: z.string() }).parse(request.params);
+  const body = z.object({
+    name: z.string().min(2).max(160).optional(),
+    category: z.string().min(2).max(100).optional(),
+    description: z.string().max(2000).optional(),
+    priceRwf: z.number().int().nonnegative().nullable().optional(),
+    imageUrl: z.string().url().nullable().optional(),
+    productUrl: z.string().url().nullable().optional(),
+    stock: z.number().int().nonnegative().optional(),
+    status: z.enum(['DRAFT','ACTIVE','OUT_OF_STOCK','ARCHIVED']).optional()
+  }).parse(request.body);
+  const product = await db.product.findFirst({ where: { id, partnerId: partner.id } });
+  if (!product) return reply.code(404).send({ error: 'Product not found' });
+  const nextStock = body.stock ?? product.stock;
+  const nextStatus = body.status ?? (nextStock > 0 ? 'ACTIVE' : 'OUT_OF_STOCK');
+  return { product: await db.product.update({ where: { id }, data: { ...body, status: nextStatus } }) };
+});
+
+app.get('/api/v1/marketplace/products', async (request) => {
+  const q = z.object({ category: z.string().optional(), search: z.string().optional(), limit: z.coerce.number().int().min(1).max(100).default(50) }).parse(request.query);
+  const products = await db.product.findMany({
+    where: {
+      status: 'ACTIVE',
+      stock: { gt: 0 },
+      ...(q.category ? { category: q.category } : {}),
+      ...(q.search ? { OR: [{ name: { contains: q.search, mode: 'insensitive' } }, { description: { contains: q.search, mode: 'insensitive' } }, { category: { contains: q.search, mode: 'insensitive' } }] } : {})
+    },
+    orderBy: { createdAt: 'desc' },
+    take: q.limit,
+    include: { partner: { select: { id: true, businessName: true, phone: true, location: true } } }
+  });
+  return { products };
+});
+
+app.get('/api/v1/marketplace/products/:id', async (request, reply) => {
+  const { id } = z.object({ id: z.string() }).parse(request.params);
+  const product = await db.product.findFirst({
+    where: { id, status: 'ACTIVE', stock: { gt: 0 } },
+    include: { partner: { select: { id: true, businessName: true, phone: true, location: true, description: true } } }
+  });
+  if (!product) return reply.code(404).send({ error: 'Product not found' });
+  return { product };
+});
+
+app.post('/api/v1/marketplace/orders', async (request, reply) => {
+  const user = await auth(request, reply); if (!user) return;
+  const body = z.object({
+    productId: z.string(),
+    quantity: z.number().int().min(1).max(1000),
+    customerName: z.string().min(2).max(120),
+    customerPhone: z.string().regex(/^\\+?[0-9]{8,15}$/),
+    deliveryLocation: z.string().min(2).max(300),
+    notes: z.string().max(1000).optional()
+  }).parse(request.body);
+  const product = await db.product.findFirst({ where: { id: body.productId, status: 'ACTIVE', stock: { gte: body.quantity } }, include: { partner: true } });
+  if (!product || product.partner.status !== 'APPROVED') return reply.code(409).send({ error: 'Product is not available for ordering' });
+  const order = await db.$transaction(async (tx) => {
+    const created = await tx.marketplaceOrder.create({
+      data: {
+        partnerId: product.partnerId,
+        customerId: user.id,
+        customerName: body.customerName,
+        customerPhone: body.customerPhone,
+        deliveryLocation: body.deliveryLocation,
+        notes: body.notes,
+        items: { create: { productId: product.id, quantity: body.quantity, unitPrice: product.priceRwf } }
+      },
+      include: { items: { include: { product: true } }, partner: true }
+    });
+    await tx.product.update({ where: { id: product.id }, data: { stock: { decrement: body.quantity }, status: product.stock === body.quantity ? 'OUT_OF_STOCK' : 'ACTIVE' } });
+    return created;
+  });
+  await db.notification.create({ data: { userId: product.partner.userId, type: 'MARKETPLACE_ORDER', title: 'New marketplace order', body: `Order from ${body.customerName}. Phone: ${body.customerPhone}. Product: ${product.name}. Quantity: ${body.quantity}. Delivery: ${body.deliveryLocation}.` } });
+  await notifyWhatsApp(product.partner.phone, `LUMIA MARKETPLACE ORDER\\n\\nProduct: ${product.name}\\nQuantity: ${body.quantity}\\nCustomer: ${body.customerName}\\nPhone: ${body.customerPhone}\\nDelivery: ${body.deliveryLocation}\\n\\nOrder ID: ${order.id}`);
+  return { orderId: order.id, status: order.status };
+});
+
+app.get('/api/v1/marketplace/orders', async (request, reply) => {
+  const user = await auth(request, reply); if (!user) return;
+  const orders = await db.marketplaceOrder.findMany({
+    where: { customerId: user.id },
+    orderBy: { createdAt: 'desc' },
+    include: { items: { include: { product: true } }, partner: { select: { businessName: true, phone: true, location: true } } }
+  });
+  return { orders };
+});
+
+app.get('/api/v1/partner/orders', async (request, reply) => {
+  const user = await auth(request, reply); if (!user) return;
+  const partner = await db.partner.findUnique({ where: { userId: user.id } });
+  if (!partner) return reply.code(404).send({ error: 'Partner profile not found' });
+  const orders = await db.marketplaceOrder.findMany({ where: { partnerId: partner.id }, orderBy: { createdAt: 'desc' }, include: { items: { include: { product: true } }, customer: { select: { id: true, email: true, phone: true } } } });
+  return { orders };
+});
+
+app.patch('/api/v1/partner/orders/:id/status', async (request, reply) => {
+  const user = await auth(request, reply); if (!user) return;
+  const partner = await db.partner.findUnique({ where: { userId: user.id } });
+  if (!partner) return reply.code(404).send({ error: 'Partner profile not found' });
+  const { id } = z.object({ id: z.string() }).parse(request.params);
+  const { status } = z.object({ status: z.enum(['CONFIRMED','PROCESSING','READY','COMPLETED','CANCELLED']) }).parse(request.body);
+  const order = await db.marketplaceOrder.findFirst({ where: { id, partnerId: partner.id }, include: { items: { include: { product: true } }, partner: true } });
+  if (!order) return reply.code(404).send({ error: 'Order not found' });
+  const updated = await db.marketplaceOrder.update({ where: { id }, data: { status } });
+  await db.notification.create({ data: { userId: order.customerId, type: 'MARKETPLACE_ORDER_STATUS', title: 'Order status updated', body: `Your order ${order.id} is now ${status}.` } });
+  await notifyWhatsApp(order.customerPhone, `LUMIA ORDER UPDATE\\n\\nOrder: ${order.id}\\nStatus: ${status}\\nSeller: ${partner.businessName}`);
+  return { order: updated };
+});
+
+app.get('/api/v1/admin/overview', async (request, reply) => {
+  const user = await auth(request, reply); if (!user || !requireAdmin(user, reply)) return;
+  const [customers, agents, teachers, partners, products, orders, requests, messages] = await Promise.all([
+    db.user.count({ where: { role: 'CUSTOMER' } }),
+    db.iremboAgent.count(),
+    db.teacher.count(),
+    db.partner.count(),
+    db.product.count(),
+    db.marketplaceOrder.count(),
+    db.serviceRequest.count(),
+    db.message.count()
+  ]);
+  return { counts: { customers, agents, teachers, partners, products, orders, requests, messages } };
+});
+
+app.get('/api/v1/admin/partners', async (request, reply) => {
+  const user = await auth(request, reply); if (!user || !requireAdmin(user, reply)) return;
+  return { partners: await db.partner.findMany({ orderBy: { createdAt: 'desc' }, include: { user: { select: { email: true, phone: true } }, _count: { select: { products: true, orders: true } } } }) };
+});
+
+app.patch('/api/v1/admin/partners/:id/status', async (request, reply) => {
+  const user = await auth(request, reply); if (!user || !requireAdmin(user, reply)) return;
+  const { id } = z.object({ id: z.string() }).parse(request.params);
+  const { status } = z.object({ status: z.enum(['APPROVED','REJECTED','SUSPENDED']) }).parse(request.body);
+  const partner = await db.partner.update({ where: { id }, data: { status } });
+  await db.notification.create({ data: { userId: partner.userId, type: 'PARTNER_STATUS', title: 'Partner application updated', body: `Your partner application is now ${status.toLowerCase()}.` } });
+  await notifyWhatsApp(partner.phone, `LUMIA PARTNER\\n\\nBusiness: ${partner.businessName}\\nStatus: ${status}`);
+  return { partner };
+});
+
+app.get('/api/v1/admin/products', async (request, reply) => {
+  const user = await auth(request, reply); if (!user || !requireAdmin(user, reply)) return;
+  return { products: await db.product.findMany({ orderBy: { createdAt: 'desc' }, include: { partner: { select: { businessName: true, status: true } } } }) };
+});
+
+app.get('/api/v1/admin/orders', async (request, reply) => {
+  const user = await auth(request, reply); if (!user || !requireAdmin(user, reply)) return;
+  return { orders: await db.marketplaceOrder.findMany({ orderBy: { createdAt: 'desc' }, include: { partner: { select: { businessName: true } }, customer: { select: { email: true, phone: true } }, items: { include: { product: true } } } }) };
+});
+
+app.get('/api/v1/admin/users', async (request, reply) => {
+  const user = await auth(request, reply); if (!user || !requireAdmin(user, reply)) return;
+  return { users: await db.user.findMany({ orderBy: { createdAt: 'desc' }, select: { id: true, email: true, phone: true, role: true, createdAt: true } }) };
+});
+
+app.get('/api/v1/admin/conversations', async (request, reply) => {
+  const user = await auth(request, reply); if (!user || !requireAdmin(user, reply)) return;
+  return { sessions: await db.session.findMany({ orderBy: { updatedAt: 'desc' }, take: 100, include: { user: { select: { email: true, phone: true } }, messages: { orderBy: { createdAt: 'asc' }, take: 50 } } }) };
+});
+
+app.patch('/api/v1/admin/agents/:id/status', async (request, reply) => {
+  const user = await auth(request, reply); if (!user || !requireAdmin(user, reply)) return;
+  const { id } = z.object({ id: z.string() }).parse(request.params);
+  const { status, verificationStatus } = z.object({
+    status: z.enum(['PENDING','ACTIVE','SUSPENDED','REJECTED']).optional(),
+    verificationStatus: z.enum(['PENDING','VERIFIED','REJECTED']).optional()
+  }).refine((v) => v.status || v.verificationStatus, { message: 'Provide a status change' }).parse(request.body);
+  const agent = await db.iremboAgent.update({ where: { id }, data: { ...(status ? { status } : {}), ...(verificationStatus ? { verificationStatus } : {}) } });
+  return { agent };
+});
+
+app.patch('/api/v1/admin/teachers/:id/status', async (request, reply) => {
+  const user = await auth(request, reply); if (!user || !requireAdmin(user, reply)) return;
+  const { id } = z.object({ id: z.string() }).parse(request.params);
+  const { status, verificationStatus } = z.object({
+    status: z.enum(['PENDING','ACTIVE','SUSPENDED','REJECTED']).optional(),
+    verificationStatus: z.enum(['PENDING','VERIFIED','REJECTED']).optional()
+  }).refine((v) => v.status || v.verificationStatus, { message: 'Provide a status change' }).parse(request.body);
+  return { teacher: await db.teacher.update({ where: { id }, data: { ...(status ? { status } : {}), ...(verificationStatus ? { verificationStatus } : {}) } }) };
+});
+
 await registerBuilderRoutes(app);
 
 app.setErrorHandler((error, _request, reply) => { app.log.error(error); reply.code(error.statusCode ?? 500).send({ error: error.message || 'Internal server error' }); });
