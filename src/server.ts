@@ -127,6 +127,27 @@ function needsWebSearch(message: string) {
   return /latest|today|now|current|recent|price|cost|news|2026|available|requirement|requirements|official|iremb|job|jobs|opportunit|website|who is|what is/i.test(message);
 }
 
+
+function cleanLumiaResponse(text: string) {
+  return text
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/\*([^*]+)\*/g, '$1')
+    .replace(/^#{1,6}\s*/gm, '')
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '$1: $2')
+    .replace(/https?:\/\/\S{90,}/g, (url) => {
+      try {
+        const parsed = new URL(url);
+        const short = parsed.origin + parsed.pathname;
+        return short.length <= 90 ? short + (parsed.search ? '?…' : '') : parsed.origin + '/…';
+      } catch {
+        return url;
+      }
+    })
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 async function generateLumiaReply(message: string, history: Array<{ role: 'user'|'assistant'; content: string }> = []) {
   if (!gemini) return 'LUMIA is temporarily unavailable. Please try again later.';
   let webContext = '';
@@ -140,6 +161,10 @@ async function generateLumiaReply(message: string, history: Array<{ role: 'user'
   }
   const prompt = [
     'You are LUMIA, an AI assistant for the LUMIA Agent Platform.',
+    'Write clean plain text for WhatsApp and web chat.',
+    'Do not use Markdown headings with #, ##, ### or asterisks for bold/italic.',
+    'Do not wrap links in Markdown syntax.',
+    'Keep answers compact and readable on a phone.',
     'Be concise, helpful, factual, and clear.',
     'When web context is provided, use it for current claims and include relevant source URLs.',
     'For Irembo requirements or fees, prefer official Irembo sources and state uncertainty when verification is unavailable.',
@@ -544,7 +569,7 @@ app.post('/api/v1/chat', async (request, reply) => {
 
   const answer = await generateLumiaReply(body.message, history as Array<{ role: 'user' | 'assistant'; content: string }>);
   const assistantMessage = await db.message.create({
-    data: { sessionId: session.id, role: 'assistant', content: answer }
+    data: { sessionId: session.id, role: 'assistant', content: cleanLumiaResponse(answer) }
   });
 
   return {
@@ -577,8 +602,8 @@ app.post('/api/v1/whatsapp/webhook', async (request, reply) => {
       take: 12,
       select: { role: true, content: true }
     }).then(items => items.reverse() as Array<{ role: 'user'|'assistant'; content: string }>));
-    await db.message.create({ data: { sessionId: session.id, role: 'assistant', content: answer } });
-    await sendWhatsAppText(from, answer);
+    await db.message.create({ data: { sessionId: session.id, role: 'assistant', content: cleanLumiaResponse(answer) } });
+    await sendWhatsAppText(from, cleanLumiaResponse(answer));
 
     return reply.code(200).send({ received: true, replied: true, mode: 'ai' });
   } catch (error) {
