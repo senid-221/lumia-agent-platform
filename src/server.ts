@@ -518,8 +518,9 @@ async function handleWhatsAppCommand(phone: string, user: any, text: string) {
   };
 
   if (selected && newServiceMessages[selected]) {
-    const platformService = await db.platformService.findFirst({ where: { slug: selected } });
-    await db.session.update({ where: { id: session.id }, data: { title: `WhatsApp chat | PLATFORM_SERVICE=${platformService?.slug || selected} | PLATFORM_STATE=AWAITING_DETAILS` } });
+    const platformSlugMap: Record<string,string> = { website:'website-building', hosting:'web-hosting', tech:'teaching-tech', prompts:'prompt-generation', design:'flyer-graphic-design', jobs:'jobs-for-seekers' };
+    const platformSlug = platformSlugMap[selected] || selected;
+    await db.session.update({ where: { id: session.id }, data: { title: `WhatsApp chat | PLATFORM_SERVICE=${platformSlug} | PLATFORM_STATE=AWAITING_DETAILS` } });
     await sendWhatsAppText(phone, newServiceMessages[selected] + '\\n\\nAndika DETAILS: ibisobanuro birambuye kugirango dutegure request yawe.');
     return true;
   }
