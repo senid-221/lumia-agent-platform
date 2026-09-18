@@ -47,6 +47,27 @@ app.get('/', async () => ({
 
 app.get('/health', async () => ({ status: 'ok', service: 'LUMIA AGENT PLATFORM', version: '1.0.0' }));
 
+async function sendWhatsAppTyping(to: string, typing: boolean) {
+  if (!env.WHATSAPP_ACCESS_TOKEN || !env.WHATSAPP_PHONE_NUMBER_ID) return;
+  const url = `https://graph.facebook.com/${env.WHATSAPP_GRAPH_VERSION}/${env.WHATSAPP_PHONE_NUMBER_ID}/messages`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${env.WHATSAPP_ACCESS_TOKEN}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      messaging_product: 'whatsapp',
+      to,
+      status: typing ? 'typing' : 'read'
+    })
+  });
+  if (!response.ok) {
+    const detail = await response.text();
+    app.log.warn({ status: response.status, detail }, 'WhatsApp typing/read indicator failed');
+  }
+}
+
 async function sendWhatsAppText(to: string, body: string) {
   if (!env.WHATSAPP_ACCESS_TOKEN || !env.WHATSAPP_PHONE_NUMBER_ID) throw new Error('WhatsApp credentials are not configured');
   const url = `https://graph.facebook.com/${env.WHATSAPP_GRAPH_VERSION}/${env.WHATSAPP_PHONE_NUMBER_ID}/messages`;
@@ -591,8 +612,11 @@ app.post('/api/v1/whatsapp/webhook', async (request, reply) => {
     const { session, user } = await getWhatsAppSession(from);
     await db.message.create({ data: { sessionId: session.id, role: 'user', content: text } });
 
+    await sendWhatsAppTyping(from, true);
+
     const handled = await handleWhatsAppCommand(from, user, text);
     if (handled) {
+      await sendWhatsAppTyping(from, false);
       return reply.code(200).send({ received: true, replied: true, mode: 'service-menu' });
     }
 
@@ -603,6 +627,7 @@ app.post('/api/v1/whatsapp/webhook', async (request, reply) => {
       select: { role: true, content: true }
     }).then(items => items.reverse() as Array<{ role: 'user'|'assistant'; content: string }>));
     await db.message.create({ data: { sessionId: session.id, role: 'assistant', content: cleanLumiaResponse(answer) } });
+    await sendWhatsAppTyping(from, false);
     await sendWhatsAppText(from, cleanLumiaResponse(answer));
 
     return reply.code(200).send({ received: true, replied: true, mode: 'ai' });
