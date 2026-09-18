@@ -1247,6 +1247,14 @@ const PLATFORM_SERVICES = [
   ['jobs-for-seekers', 'Jobs for Seekers', 'Job opportunity discovery and application support.']
 ] as const;
 
+async function ensurePlatformServices() {
+  for (const [slug, name, description] of PLATFORM_SERVICES) {
+    await db.platformService.upsert({ where: { slug }, update: { name, description, active: true }, create: { slug, name, description, active: true } });
+  }
+}
+
+await ensurePlatformServices();
+
 app.get('/api/v1/platform/services', async () => {
   const existing = await db.platformService.findMany({ where: { active: true }, orderBy: { name: 'asc' } });
   if (existing.length) return { services: existing };
