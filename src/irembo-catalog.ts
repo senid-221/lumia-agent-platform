@@ -113,7 +113,7 @@ export const OFFICIAL_IREMBO_CATALOG: IremboCatalogEntry[] = [
     processingTime: '30 days',
     accountRequired: true,
     officialUrl: 'https://support.new.irembo.gov.rw/en/support/solutions/articles/47001283560-how-to-apply-for-single-digital-id-adult-self-pre-enrollment-'
-  }
+  },
   {
     slug: 'birth-certificate',
     name: 'Birth Certificate',
