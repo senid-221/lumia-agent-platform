@@ -10,6 +10,7 @@ datasource db {
 enum Role {
   CUSTOMER
   AGENT
+  TEACHER
   ADMIN
 }
 
@@ -51,8 +52,10 @@ model User {
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
   agent        IremboAgent?
+  teacher      Teacher?
   sessions     Session[]
   requests     ServiceRequest[] @relation("CustomerRequests")
+  teacherRequests TeacherRequest[] @relation("CustomerTeacherRequests")
   notifications Notification[]
 }
 
@@ -111,6 +114,41 @@ model IremboAgent {
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
   @@index([status, verificationStatus, location])
+}
+
+model Teacher {
+  id                 String             @id @default(cuid())
+  userId             String             @unique
+  displayName        String
+  phone              String
+  location           String
+  technologies       String[]
+  bio                String?
+  status             AgentStatus        @default(PENDING)
+  verificationStatus VerificationStatus @default(PENDING)
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  requests           TeacherRequest[]
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  @@index([status, verificationStatus, location])
+}
+
+model TeacherRequest {
+  id            String        @id @default(cuid())
+  customerId    String
+  teacherId     String
+  technology    String
+  customerName  String
+  customerPhone String
+  description   String?
+  location      String?
+  status        RequestStatus @default(PENDING)
+  customer      User          @relation("CustomerTeacherRequests", fields: [customerId], references: [id], onDelete: Cascade)
+  teacher       Teacher       @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  @@index([teacherId, status])
+  @@index([technology, status])
 }
 
 model AgentPlan {
