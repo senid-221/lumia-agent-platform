@@ -17,6 +17,10 @@ export default function ChatPage() {
   );
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [error, setError] = useState('');
+  const [selectedService, setSelectedService] = useState<string>('');
+  const [serviceAgents, setServiceAgents] = useState<Array<{ id: string; displayName: string; phone: string; location: string; serviceAreas: string[] }>>([]);
+  const [agentsLoading, setAgentsLoading] = useState(false);
+  const [requestMessage, setRequestMessage] = useState('');
 
   async function sendMessage(text?: string) {
     const value = (text ?? message).trim();
@@ -41,6 +45,50 @@ export default function ChatPage() {
       setError(err instanceof Error ? err.message : 'Unable to reach LUMIA.');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadAgents(serviceName: string) {
+    setAgentsLoading(true);
+    try {
+      const result = await api<{ agents: Array<{ id: string; displayName: string; phone: string; location: string; serviceAreas: string[] }> }>(
+        '/api/v1/irembo-agents?serviceType=' + encodeURIComponent(serviceName)
+      );
+      setServiceAgents(result.agents);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to load available agents.');
+    } finally {
+      setAgentsLoading(false);
+    }
+  }
+
+  async function chooseAgent(agentId: string) {
+    if (!selectedService) return;
+    try {
+      const token = window.localStorage.getItem('lumia_token');
+      if (!token) throw new Error('Please log in first.');
+      setRequestMessage('Creating your service request…');
+      const services = await api<{ services: Array<{ id: string; name: string }> }>('/api/v1/irembo/services');
+      const service = services.services.find((item) => item.name.toLowerCase() === selectedService.toLowerCase());
+      if (!service) throw new Error('This Irembo service is not yet linked to the service database.');
+      const created = await api<{ requestId: string; status: string }>('/api/v1/irembo/service-requests', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          serviceId: service.id,
+          customerName: window.localStorage.getItem('lumia_email') || 'LUMIA customer',
+          customerPhone: '',
+          description: 'Requested through LUMIA AI',
+        }),
+      });
+      await api(`/api/v1/irembo/service-requests/${created.requestId}/choose-agent`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ agentId }),
+      });
+      setRequestMessage('Request sent to the selected agent.');
+    } catch (err) {
+      setRequestMessage(err instanceof Error ? err.message : 'Could not create the request.');
     }
   }
 
@@ -121,7 +169,26 @@ export default function ChatPage() {
                         ['Available agents', <MapPin size={15}/>],
                       ].map(([label, icon]) => <div key={String(label)} className="rounded-xl border border-white/10 bg-white/[.02] p-3 text-xs text-slate-400"><div className="flex items-center gap-2 text-slate-200">{icon}{label}</div><div className="mt-2">Baza LUMIA ibigenzure.</div></div>)}
                     </div>
-                    <button onClick={() => void sendMessage(`Nshaka ${service}. Mbanza unsobanurire ibisabwa, igiciro n'igihe bifata, hanyuma unyereke Available Agents banyegereye kandi umfashe guhitamo uwo nakorana na we.`)} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white">Tangira application <ChevronDown size={15}/></button>
+                    <div className="mt-4 flex flex-wrap gap-2">
+  <button onClick={() => { setSelectedService(service); void sendMessage(`Nshaka ${service}. Mbanza unsobanurire ibisabwa, igiciro n'igihe bifata.`); }} className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white">Sobanukirwa service <ChevronDown size={15}/></button>
+  <button onClick={() => { setSelectedService(service); void loadAgents(service); }} className="inline-flex items-center gap-2 rounded-xl border border-violet-400/30 bg-white/5 px-4 py-2.5 text-sm font-semibold text-slate-200"><Users size={15}/> Available Agents</button>
+</div>
+{selectedService === service && (
+  <div className="mt-5 rounded-2xl border border-white/10 bg-black/10 p-4">
+    <div className="text-xs font-semibold uppercase tracking-[.15em] text-slate-500">Available Agents</div>
+    {agentsLoading ? <div className="mt-3 text-sm text-slate-500">Searching agents…</div> : serviceAgents.length === 0 ? <div className="mt-3 text-sm text-slate-500">No verified agents are currently listed for this service.</div> : (
+      <div className="mt-3 space-y-2">
+        {serviceAgents.map((agent) => (
+          <div key={agent.id} className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[.02] p-3">
+            <div><div className="text-sm font-semibold text-slate-200">{agent.displayName}</div><div className="mt-1 text-xs text-slate-500">{agent.location}</div></div>
+            <button onClick={() => void chooseAgent(agent.id)} className="rounded-lg bg-violet-600 px-3 py-2 text-xs font-semibold text-white">Request agent</button>
+          </div>
+        ))}
+      </div>
+    )}
+    {requestMessage && <div className="mt-3 text-xs text-violet-300">{requestMessage}</div>}
+  </div>
+)}
                   </div>
                 )}
                 <div className="mt-10 grid gap-3 sm:grid-cols-3">
