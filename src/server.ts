@@ -888,7 +888,35 @@ app.post('/api/v1/teachers/:id/requests', async (request, reply) => {
   return { requestId: requestRow.id, status: requestRow.status };
 });
 
-app.get('/api/v1/irembo/services', async () => ({ services: await db.iremboService.findMany({ where: { active: true }, orderBy: [{ category: 'asc' }, { name: 'asc' }] }) }));
+app.get('/api/v1/irembo/services', async () => ({
+  services: await db.iremboService.findMany({
+    where: { active: true },
+    orderBy: [{ category: 'asc' }, { name: 'asc' }]
+  })
+}));
+
+app.get('/api/v1/irembo/services/:slug', async (request, reply) => {
+  const { slug } = z.object({ slug: z.string() }).parse(request.params);
+  const service = await db.iremboService.findFirst({
+    where: { slug, active: true }
+  });
+  if (!service) return reply.code(404).send({ error: 'Irembo service not found' });
+
+  const agents = await db.iremboAgent.findMany({
+    where: {
+      status: 'ACTIVE',
+      verificationStatus: 'VERIFIED',
+      serviceAreas: { has: service.name }
+    },
+    take: 20,
+    orderBy: { updatedAt: 'desc' }
+  });
+
+  return {
+    service,
+    agents: agents.map(({ userId, ...agent }) => agent)
+  };
+});
 
 app.get('/api/v1/irembo/service-requests', async (request, reply) => {
   const user = await auth(request, reply); if (!user) return;
