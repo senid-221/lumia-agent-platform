@@ -213,31 +213,11 @@ app.post('/api/v1/auth/register', async (request, reply) => {
   const user = await db.user.create({ data: { email: body.email.toLowerCase(), passwordHash: await bcrypt.hash(body.password, 12) } });
   return { token: await token({ id: user.id, email: user.email, role: user.role }), user: { id: user.id, email: user.email, role: user.role } };
 });
-
 app.post('/api/v1/auth/login', async (request, reply) => {
   const body = z.object({ email: z.string().email(), password: z.string() }).parse(request.body);
   const user = await db.user.findUnique({ where: { email: body.email.toLowerCase() } });
   if (!user || !(await bcrypt.compare(body.password, user.passwordHash))) return reply.code(401).send({ error: 'Invalid email or password' });
   return { token: await token({ id: user.id, email: user.email, role: user.role }), user: { id: user.id, email: user.email, role: user.role } };
-});
-
-app.get('/api/v1/notifications', async (request, reply) => {
-  const user = await auth(request, reply); if (!user) return;
-  const notifications = await db.notification.findMany({
-    where: { userId: user.id },
-    orderBy: { createdAt: 'desc' },
-    take: 50
-  });
-  return { notifications };
-});
-
-app.post('/api/v1/notifications/:id/read', async (request, reply) => {
-  const user = await auth(request, reply); if (!user) return;
-  const { id } = z.object({ id: z.string() }).parse(request.params);
-  const notification = await db.notification.findFirst({ where: { id, userId: user.id } });
-  if (!notification) return reply.code(404).send({ error: 'Notification not found' });
-  const updated = await db.notification.update({ where: { id }, data: { readAt: new Date() } });
-  return { notification: updated };
 });
 
 app.get('/api/v1/irembo/services', async () => ({ services: await db.iremboService.findMany({ where: { active: true }, orderBy: [{ category: 'asc' }, { name: 'asc' }] }) }));
