@@ -8,6 +8,7 @@ import { z } from 'zod';
 import * as ExaModule from 'exa-js';
 import { env } from './config.js';
 import { db } from './db.js';
+import { registerBuilderRoutes } from './builder.js';
 
 const app = Fastify({ logger: true });
 const secret = new TextEncoder().encode(env.JWT_SECRET);
@@ -1133,6 +1134,8 @@ app.post('/api/v1/irembo/service-requests/:id/choose-agent', async (request, rep
 
   return { request: updated };
 });
+
+await registerBuilderRoutes(app);
 
 app.setErrorHandler((error, _request, reply) => { app.log.error(error); reply.code(error.statusCode ?? 500).send({ error: error.message || 'Internal server error' }); });
 
