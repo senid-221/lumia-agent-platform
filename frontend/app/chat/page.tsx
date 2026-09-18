@@ -9,6 +9,8 @@ import { useSearchParams } from 'next/navigation';
 type ChatMessage = { role: 'user' | 'assistant'; content: string };
 
 export default function ChatPage() {
+  const searchParams = useSearchParams();
+  const service = searchParams.get('service') || '';
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
