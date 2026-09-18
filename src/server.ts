@@ -5,14 +5,12 @@ import rateLimit from '@fastify/rate-limit';
 import bcrypt from 'bcryptjs';
 import { SignJWT, jwtVerify } from 'jose';
 import { z } from 'zod';
-import { GoogleGenAI } from '@google/genai';
 import * as ExaModule from 'exa-js';
 import { env } from './config.js';
 import { db } from './db.js';
 
 const app = Fastify({ logger: true });
 const secret = new TextEncoder().encode(env.JWT_SECRET);
-const gemini = env.GEMINI_API_KEY ? new GoogleGenAI({ apiKey: env.GEMINI_API_KEY }) : null;
 const ExaClient = (ExaModule as any).default ?? ExaModule;
 const exa = env.EXA_API_KEY ? new ExaClient(env.EXA_API_KEY) : null;
 
@@ -206,7 +204,8 @@ function cleanLumiaResponse(text: string) {
 }
 
 async function generateLumiaReply(message: string, history: Array<{ role: 'user'|'assistant'; content: string }> = []) {
-  if (!gemini) return 'LUMIA is temporarily unavailable. Please try again later.';
+  if (!env.GROQ_API_KEY?.trim()) return 'LUMIA is temporarily unavailable. Please try again later.';
+
   let webContext = '';
   if (exa && needsWebSearch(message)) {
     const results = await searchWeb(message);
@@ -216,6 +215,7 @@ async function generateLumiaReply(message: string, history: Array<{ role: 'user'
       ).join('\n\n');
     }
   }
+
   const prompt = [
     'You are LUMIA, an AI assistant for the LUMIA Agent Platform.',
     'Write clean plain text for WhatsApp and web chat.',
@@ -227,56 +227,65 @@ async function generateLumiaReply(message: string, history: Array<{ role: 'user'
     'For Irembo requirements or fees, prefer official Irembo sources and state uncertainty when verification is unavailable.',
     '',
     'CONVERSATION HISTORY:',
-    ...history.slice(-12).map((item) => `${item.role.toUpperCase()}: ${item.content}`),
+    ...history.slice(-12).map((item) => item.role.toUpperCase() + ': ' + item.content),
     'USER:',
     message,
     webContext
   ].join('\n');
-  try {
-    const response = await gemini.models.generateContent({
-      model: env.GEMINI_MODEL,
-      contents: prompt
-    });
-    return response.text?.trim() || 'I could not generate a response right now.';
-  } catch (error: any) {
-    const status = error?.status ?? error?.code;
-    const messageText = error?.message ?? String(error);
-    app.log.error({ status, errorMessage: messageText, model: env.GEMINI_MODEL }, 'Gemini generation failed');
 
-    // Gemini 3.8 Flash can temporarily return 503 during capacity/service interruptions.
-    // Retry once with the stable previous Flash generation before falling back to web search.
-    if (env.GEMINI_MODEL === 'gemini-3.8-flash' && (status === 503 || /service unavailable|overloaded|temporar/i.test(messageText))) {
-      try {
-        const fallback = await gemini.models.generateContent({
-          model: 'gemini-3.7-flash',
-          contents: prompt
-        });
-        const fallbackText = fallback.text?.trim();
-        if (fallbackText) {
-          app.log.info({ model: 'gemini-3.7-flash' }, 'Gemini fallback succeeded');
-          return fallbackText;
-        }
-      } catch (fallbackError: any) {
-        app.log.error({
-          status: fallbackError?.status ?? fallbackError?.code,
-          errorMessage: fallbackError?.message ?? String(fallbackError),
-          model: 'gemini-3.7-flash'
-        }, 'Gemini fallback failed');
-      }
-    }
+  const models = env.GROQ_MODELS.split(',').map((model) => model.trim()).filter(Boolean);
+  let lastError: any = null;
 
-    if (needsWebSearch(message) && exa) {
-      const results = await searchWeb(message);
-      if (results.length) {
-        return 'Dore amakuru agezweho nabonye ku rubuga:\n\n' +
-          results.map((r: any, i: number) => `${i + 1}. ${r.title}\n${r.text}`).join('\n\n') +
-          '\n\nInkomoko: web search.';
+  for (const model of models) {
+    try {
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer ' + env.GROQ_API_KEY.trim(),
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model,
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.2,
+          max_tokens: 1800
+        })
+      });
+
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        lastError = { status: response.status, payload };
+        app.log.warn({ model, status: response.status, error: payload?.error }, 'Groq model failed; trying next model');
+        if (![400, 401, 403, 404, 408, 409, 429, 500, 502, 503, 504].includes(response.status)) break;
+        continue;
       }
+
+      const text = payload?.choices?.[0]?.message?.content?.trim();
+      if (text) {
+        app.log.info({ model }, 'LUMIA Groq model succeeded');
+        return text;
+      }
+
+      lastError = { status: 502, payload: { error: 'Empty Groq response' } };
+    } catch (error: any) {
+      lastError = error;
+      app.log.warn({ model, errorMessage: error?.message ?? String(error) }, 'Groq request failed; trying next model');
     }
-    return 'LUMIA AI service iri gusubirwamo. Ongera ugerageze nyuma gato.';
   }
-}
 
+  app.log.error({ models, lastError }, 'All configured Groq models failed');
+
+  if (needsWebSearch(message) && exa) {
+    const results = await searchWeb(message);
+    if (results.length) {
+      return 'Dore amakuru agezweho nabonye ku rubuga:\n\n' +
+        results.map((r: any, i: number) => (i + 1) + '. ' + r.title + '\n' + r.text).join('\n\n') +
+        '\n\nInkomoko: web search.';
+    }
+  }
+
+  return 'LUMIA AI service iri gusubirwamo. Ongera ugerageze nyuma gato.';
+}
 const WHATSAPP_MENU = [
   ['services', 'Services zose'],
   ['irembo', 'Irembo Services'],
