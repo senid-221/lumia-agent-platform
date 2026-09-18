@@ -69,6 +69,15 @@ async function sendWhatsAppText(to: string, body: string) {
   }
 }
 
+async function notifyWhatsApp(phone: string | null | undefined, body: string) {
+  if (!phone || !env.WHATSAPP_ACCESS_TOKEN || !env.WHATSAPP_PHONE_NUMBER_ID) return;
+  try {
+    await sendWhatsAppText(phone.replace(/\s/g, ''), body);
+  } catch (error) {
+    app.log.error({ error, phone }, 'WhatsApp notification failed');
+  }
+}
+
 async function getWhatsAppSession(phone: string) {
   const email = `wa-${phone.replace(/\D/g, '')}@whatsapp.lumia.local`;
   let user = await db.user.findUnique({ where: { email } });
@@ -279,14 +288,24 @@ app.post('/api/v1/agent/requests/:id/status', async (request, reply) => {
     include: { service: true, agent: true }
   });
 
+  const statusText = status.replace('_', ' ').toLowerCase();
+  const statusBody = `${updated.agent?.displayName || 'Your agent'} changed ${existing.service.name} to ${statusText}.`;
+
   await db.notification.create({
     data: {
       userId: updated.customerId,
       type: 'IREMBO_REQUEST_STATUS',
       title: 'Service request updated',
-      body: `${updated.agent?.displayName || 'Your agent'} changed ${existing.service.name} to ${status.replace('_', ' ').toLowerCase()}.`
+      body: statusBody
     }
   });
+
+  const customerUser = await db.user.findUnique({ where: { id: updated.customerId } });
+  const customerWaPhone = customerUser?.email.startsWith('wa-') ? customerUser.email.slice(3).split('@')[0] : null;
+  await notifyWhatsApp(
+    customerWaPhone,
+    `LUMIA IREMBO UPDATE\n\nService: ${existing.service.name}\nStatus: ${statusText}\nAgent: ${updated.agent?.displayName || 'Not assigned'}\n\nYour request status has been updated.`
+  );
 
   return { request: updated };
 });
@@ -387,6 +406,18 @@ app.post('/api/v1/irembo/service-requests/:id/choose-agent', async (request, rep
       body: `${agent.displayName} has been selected to help with ${existing.service.name}.`
     }
   });
+
+  await notifyWhatsApp(
+    agent.phone,
+    `LUMIA IREMBO REQUEST\n\nNew service request: ${existing.service.name}\nCustomer: ${existing.customerName}\nPhone: ${existing.customerPhone}\nLocation: ${existing.location || 'Not provided'}\n\nOpen your LUMIA Agent Workspace to accept or manage this request.`
+  );
+
+  const customerUser = await db.user.findUnique({ where: { id: user.id } });
+  const customerWaPhone = customerUser?.email.startsWith('wa-') ? customerUser.email.slice(3).split('@')[0] : null;
+  await notifyWhatsApp(
+    customerWaPhone,
+    `LUMIA IREMBO\n\nAgent selected: ${agent.displayName}\nService: ${existing.service.name}\nPhone: ${agent.phone}\nLocation: ${agent.location}\n\nThe agent can now assist you with your request.`
+  );
 
   return { request: updated };
 });
