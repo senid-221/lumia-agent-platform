@@ -437,6 +437,73 @@ export const OFFICIAL_IREMBO_CATALOG: IremboCatalogEntry[] = [
     accountRequired: null,
     officialUrl: 'https://support.irembo.gov.rw/en/support/solutions/articles/47001200653-how-to-publish-in-the-official-gazette'
   },
+
+  {
+    slug: 'death-record',
+    name: 'Death Record',
+    category: 'Family',
+    institution: 'Ministry of Local Government (MINALOC)',
+    description: 'Apply for an official death record certificate for a person registered as deceased.',
+    requirements: [
+      'Applicant National ID number.',
+      'Deceased National ID, Child ID/NIN, or passport for foreigners.',
+      'Death information and witness/declarant details when required.',
+      'Valid phone number, email address, or both.'
+    ],
+    feeRwf: 1500,
+    processingTime: '1 working day',
+    accountRequired: true,
+    officialUrl: 'https://support.irembo.gov.rw/en/support/solutions/articles/47001200826-how-to-apply-for-a-death-record'
+  },
+  {
+    slug: 'criminal-record-certificate',
+    name: 'Criminal Record Certificate',
+    category: 'Other Services',
+    institution: 'National Public Prosecution Authority (NPPA)',
+    description: 'Apply for a Criminal Record Certificate for eligible Rwandans and foreigners who live or have lived in Rwanda.',
+    requirements: [
+      'Irembo account or assistance from an Irembo agent.',
+      'Rwandan National ID/Citizen Application Number, or eligible foreigner/refugee identification.',
+      'Supporting documents where applicable.',
+      'Valid phone number, email address, or both.'
+    ],
+    feeRwf: 1200,
+    processingTime: '21 days',
+    accountRequired: true,
+    officialUrl: 'https://support.irembo.gov.rw/en/support/solutions/articles/47001147721-how-to-apply-for-a-criminal-record-certificate'
+  },
+  {
+    slug: 'criminal-record-certificate-correction',
+    name: 'Correction of Criminal Record Certificate',
+    category: 'Other Services',
+    institution: 'National Public Prosecution Authority (NPPA)',
+    description: 'Request correction or contest information on a still-valid Criminal Record Certificate.',
+    requirements: [
+      'Irembo account or assistance from an Irembo agent.',
+      'Valid application number for the Criminal Record Certificate.',
+      'Valid phone number, email address, or both.'
+    ],
+    feeRwf: 0,
+    processingTime: '21 days',
+    accountRequired: true,
+    officialUrl: 'https://support.irembo.gov.rw/en/support/solutions/articles/47001262610-how-to-apply-for-correction-of-criminal-record-certificate'
+  },
+  {
+    slug: 'fingerprint-certificate',
+    name: 'Fingerprint Certificate',
+    category: 'Other Services',
+    institution: 'Rwanda Investigation Bureau (RIB)',
+    description: 'Apply for a fingerprint certificate requested by an embassy or another institution.',
+    requirements: [
+      'Rwandan ID, refugee ID, foreign ID, or passport.',
+      'Valid phone number, email address, or both.',
+      'Appointment and supporting attachments where required.'
+    ],
+    feeRwf: 1200,
+    processingTime: '7 days',
+    accountRequired: null,
+    officialUrl: 'https://support.irembo.gov.rw/en/support/solutions/articles/47001266722-how-to-apply-for-a-fingerprint-certificate'
+  },
 ];
 
 export async function ensureOfficialIremboCatalog() {
