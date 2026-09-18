@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import {useState} from 'react';
-import {api} from '../../lib/api';
+import {api} from '@/lib/api';
 
 export default function PartnerRegisterPage(){
  const [businessName,setBusinessName]=useState('');const [phone,setPhone]=useState('');const [location,setLocation]=useState('');const [description,setDescription]=useState('');const [message,setMessage]=useState('');const [loading,setLoading]=useState(false);
