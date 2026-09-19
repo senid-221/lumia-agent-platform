@@ -12,6 +12,7 @@ import { registerBuilderRoutes } from './builder.js';
 import { ensureOfficialIremboCatalog } from './irembo-catalog.js';
 import { ensureVerifiedMarketplaceCatalog } from './marketplace-catalog.js';
 import { importProductsForPartner } from './marketplace-importer.js';
+import { fetchProductPage } from './marketplace-source-fetcher.js';
 
 const app = Fastify({ logger: true });
 const secret = new TextEncoder().encode(env.JWT_SECRET);
@@ -1264,6 +1265,36 @@ app.get('/api/v1/platform/services', async () => {
   const existing = await db.platformService.findMany({ where: { active: true }, orderBy: { name: 'asc' } });
   if (existing.length) return { services: existing };
   return { services: PLATFORM_SERVICES.map(([slug, name, description]) => ({ id: slug, slug, name, description, active: true })) };
+});
+
+app.post('/api/v1/marketplace/import-url', async (request, reply) => {
+  const user = await auth(request, reply); if (!user) return;
+  if (user.role !== 'ADMIN') return reply.code(403).send({ error: 'Admin access required' });
+  const body = z.object({
+    partnerId: z.string(),
+    category: z.string().min(2).max(100),
+    priceRwf: z.number().int().nonnegative().nullable(),
+    url: z.string().url(),
+    description: z.string().max(3000).nullable().optional()
+  }).parse(request.body);
+  const partner = await db.partner.findUnique({ where: { id: body.partnerId } });
+  if (!partner) return reply.code(404).send({ error: 'Partner not found' });
+  const source = await fetchProductPage(body.url);
+  const imported = await importProductsForPartner({
+    partnerId: partner.id,
+    products: [{
+      name: source.name,
+      category: body.category,
+      priceRwf: body.priceRwf,
+      productUrl: source.productUrl,
+      sourceShop: source.source,
+      sourceUrl: source.sourceUrl,
+      imageUrl: source.imageUrl,
+      description: body.description || source.description,
+      priceStatus: 'RW_REFERENCE'
+    }]
+  });
+  return { ...imported, source };
 });
 
 app.post('/api/v1/marketplace/import', async (request, reply) => {
