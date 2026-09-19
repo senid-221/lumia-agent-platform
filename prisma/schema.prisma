@@ -267,6 +267,9 @@ model Product {
   priceRwf    Int?
   imageUrl    String?
   productUrl  String?
+  sourceShop   String?
+  sourceUrl    String?
+  verifiedAt   DateTime?
   stock       Int           @default(0)
   status      ProductStatus @default(DRAFT)
   partner     Partner       @relation(fields: [partnerId], references: [id], onDelete: Cascade)
