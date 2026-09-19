@@ -11,6 +11,7 @@ export type MarketplaceCatalogItem = {
   priceStatus?: 'RW_VERIFIED' | 'RW_REFERENCE';
   priceSourceShop?: string;
   priceSourceUrl?: string;
+  imageUrl?: string;
   referenceCurrency?: string;
   sourceType?: 'international';
 };
@@ -122,6 +123,7 @@ export async function ensureVerifiedMarketplaceCatalog() {
         sourceShop: item.sourceShop,
         sourceUrl: item.sourceUrl,
         verifiedAt: new Date(item.verifiedAt),
+        imageUrl: item.imageUrl,
         priceStatus: item.priceStatus,
         priceSourceShop: item.priceSourceShop,
         priceSourceUrl: item.priceSourceUrl,
@@ -139,6 +141,7 @@ export async function ensureVerifiedMarketplaceCatalog() {
         sourceShop: item.sourceShop,
         sourceUrl: item.sourceUrl,
         verifiedAt: new Date(item.verifiedAt),
+        imageUrl: item.imageUrl,
         stock: 1,
         status: 'ACTIVE',
         description: 'Source: ' + item.sourceShop + '. Verified: ' + item.verifiedAt + '.'
