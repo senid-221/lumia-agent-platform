@@ -125,7 +125,7 @@ export async function ensureVerifiedMarketplaceCatalog() {
         priceStatus: item.priceStatus,
         priceSourceShop: item.priceSourceShop,
         priceSourceUrl: item.priceSourceUrl,
-        stock: 1,
+        stock: item.priceStatus === 'RW_REFERENCE' ? 0 : 1,
         status: 'ACTIVE',
         description: 'Source: ' + item.sourceShop + '. Price status: ' + (item.priceStatus || 'RW_REFERENCE') + '. Verified: ' + item.verifiedAt + '.'
       },
