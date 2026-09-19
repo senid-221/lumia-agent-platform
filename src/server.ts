@@ -11,6 +11,7 @@ import { db } from './db.js';
 import { registerBuilderRoutes } from './builder.js';
 import { ensureOfficialIremboCatalog } from './irembo-catalog.js';
 import { ensureVerifiedMarketplaceCatalog } from './marketplace-catalog.js';
+import { importProductsForPartner } from './marketplace-importer.js';
 
 const app = Fastify({ logger: true });
 const secret = new TextEncoder().encode(env.JWT_SECRET);
@@ -1263,6 +1264,32 @@ app.get('/api/v1/platform/services', async () => {
   const existing = await db.platformService.findMany({ where: { active: true }, orderBy: { name: 'asc' } });
   if (existing.length) return { services: existing };
   return { services: PLATFORM_SERVICES.map(([slug, name, description]) => ({ id: slug, slug, name, description, active: true })) };
+});
+
+app.post('/api/v1/marketplace/import', async (request, reply) => {
+  const user = await auth(request, reply); if (!user) return;
+  if (user.role !== 'ADMIN') return reply.code(403).send({ error: 'Admin access required' });
+
+  const body = z.object({
+    partnerId: z.string(),
+    products: z.array(z.object({
+      name: z.string().min(2).max(200),
+      category: z.string().min(2).max(100),
+      priceRwf: z.number().int().nonnegative().nullable().optional(),
+      productUrl: z.string().url(),
+      sourceShop: z.string().min(2).max(120),
+      sourceUrl: z.string().url(),
+      imageUrl: z.string().url().nullable().optional(),
+      description: z.string().max(3000).nullable().optional(),
+      verifiedAt: z.string().datetime().nullable().optional(),
+      priceStatus: z.enum(['RW_VERIFIED','RW_REFERENCE']).optional()
+    })).min(1).max(100)
+  }).parse(request.body);
+
+  const partner = await db.partner.findUnique({ where: { id: body.partnerId } });
+  if (!partner) return reply.code(404).send({ error: 'Partner not found' });
+
+  return importProductsForPartner({ partnerId: partner.id, products: body.products });
 });
 
 app.post('/api/v1/partners/register', async (request, reply) => {
