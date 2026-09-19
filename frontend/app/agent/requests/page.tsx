@@ -5,7 +5,19 @@ import { useEffect, useState } from 'react';
 import { ArrowLeft, CheckCircle2, Clock3, MapPin, Phone, ShieldCheck, UserRound } from 'lucide-react';
 import { api } from '@/lib/api';
 
-type ProviderRequest = {\n  id: string;\n  status: string;\n  customerName: string;\n  customerPhone: string;\n  location: string | null;\n  details: string;\n  createdAt: string;\n  service: { name: string };\n  customer: { email: string };\n};\n\ntype Request = {
+type ProviderRequest = {
+  id: string;
+  status: string;
+  customerName: string;
+  customerPhone: string;
+  location: string | null;
+  details: string;
+  createdAt: string;
+  service: { name: string };
+  customer: { email: string };
+};
+
+type Request = {
   id: string;
   status: string;
   customerName: string;
