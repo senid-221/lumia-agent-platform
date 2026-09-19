@@ -1332,7 +1332,7 @@ app.get('/api/v1/marketplace/products', async (request) => {
   const products = await db.product.findMany({
     where: {
       status: 'ACTIVE',
-      stock: { gt: 0 },
+      status: 'ACTIVE',
       ...(q.category ? { category: q.category } : {}),
       ...(q.search ? { OR: [{ name: { contains: q.search, mode: 'insensitive' } }, { description: { contains: q.search, mode: 'insensitive' } }, { category: { contains: q.search, mode: 'insensitive' } }] } : {})
     },
@@ -1346,7 +1346,7 @@ app.get('/api/v1/marketplace/products', async (request) => {
 app.get('/api/v1/marketplace/products/:id', async (request, reply) => {
   const { id } = z.object({ id: z.string() }).parse(request.params);
   const product = await db.product.findFirst({
-    where: { id, status: 'ACTIVE', stock: { gt: 0 } },
+    where: { id, status: 'ACTIVE' },
     include: { partner: { select: { id: true, businessName: true, phone: true, location: true, description: true } } }
   });
   if (!product) return reply.code(404).send({ error: 'Product not found' });
