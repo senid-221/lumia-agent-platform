@@ -8,6 +8,8 @@ export type MarketplaceCatalogItem = {
   sourceShop: string;
   sourceUrl: string;
   verifiedAt: string;
+  referenceCurrency?: string;
+  sourceType?: 'international';
 };
 
 export const VERIFIED_RW_CATALOG: MarketplaceCatalogItem[] = [
@@ -75,6 +77,14 @@ export const VERIFIED_RW_CATALOG: MarketplaceCatalogItem[] = [
   { name: 'Bulb Camera 2C', category: 'Bulbs', priceRwf: 75000, productUrl: 'https://www.kigaliboutique.com/', sourceShop: 'Kigali Boutique', sourceUrl: 'https://www.kigaliboutique.com/', verifiedAt: '2026-09-19' },
   { name: 'Cruiser SC Camera', category: 'Bulbs', priceRwf: 110000, productUrl: 'https://www.kigaliboutique.com/', sourceShop: 'Kigali Boutique', sourceUrl: 'https://www.kigaliboutique.com/', verifiedAt: '2026-09-19' },
   { name: 'TP-Link TL-WR940N 450Mbps Wireless N Router', category: 'Laptops', priceRwf: 85000, productUrl: 'https://www.kigaliboutique.com/', sourceShop: 'Kigali Boutique', sourceUrl: 'https://www.kigaliboutique.com/', verifiedAt: '2026-09-19' },
+
+  { name: 'Samsung Galaxy A15 128GB', category: 'Mobile Phones', priceRwf: 195000, productUrl: 'https://www.amazon.com/s?k=Samsung+Galaxy+A15+128GB', sourceShop: 'Amazon (international reference)', sourceUrl: 'https://www.amazon.com/s?k=Samsung+Galaxy+A15+128GB', verifiedAt: '2026-09-19', referenceCurrency: 'USD', sourceType: 'international' },
+  { name: 'Tecno Spark 20 Pro', category: 'Mobile Phones', priceRwf: 145000, productUrl: 'https://www.amazon.com/s?k=Tecno+Spark+20+Pro', sourceShop: 'Amazon (international reference)', sourceUrl: 'https://www.amazon.com/s?k=Tecno+Spark+20+Pro', verifiedAt: '2026-09-19', referenceCurrency: 'USD', sourceType: 'international' },
+  { name: 'Anker Soundcore Q20i Headphones', category: 'Mobile Phones', priceRwf: 145000, productUrl: 'https://www.amazon.com/s?k=Anker+Soundcore+Q20i', sourceShop: 'Amazon (international reference)', sourceUrl: 'https://www.amazon.com/s?k=Anker+Soundcore+Q20i', verifiedAt: '2026-09-19', referenceCurrency: 'USD', sourceType: 'international' },
+  { name: 'HP 15.6 Laptop', category: 'Laptops', priceRwf: 450000, productUrl: 'https://www.bestbuy.com/site/searchpage.jsp?st=HP+15.6+laptop', sourceShop: 'Best Buy (international reference)', sourceUrl: 'https://www.bestbuy.com/site/searchpage.jsp?st=HP+15.6+laptop', verifiedAt: '2026-09-19', referenceCurrency: 'USD', sourceType: 'international' },
+  { name: 'Lenovo ThinkPad E14', category: 'Laptops', priceRwf: 520000, productUrl: 'https://www.amazon.com/s?k=Lenovo+ThinkPad+E14', sourceShop: 'Amazon (international reference)', sourceUrl: 'https://www.amazon.com/s?k=Lenovo+ThinkPad+E14', verifiedAt: '2026-09-19', referenceCurrency: 'USD', sourceType: 'international' },
+  { name: 'Sony WH-1000XM5 Headphones', category: 'Mobile Phones', priceRwf: 420000, productUrl: 'https://www.bestbuy.com/site/searchpage.jsp?st=Sony+WH-1000XM5', sourceShop: 'Best Buy (international reference)', sourceUrl: 'https://www.bestbuy.com/site/searchpage.jsp?st=Sony+WH-1000XM5', verifiedAt: '2026-09-19', referenceCurrency: 'USD', sourceType: 'international' },
+  { name: 'Apple AirPods Pro (2nd generation)', category: 'Mobile Phones', priceRwf: 330000, productUrl: 'https://www.bestbuy.com/site/searchpage.jsp?st=AirPods+Pro+2', sourceShop: 'Best Buy (international reference)', sourceUrl: 'https://www.bestbuy.com/site/searchpage.jsp?st=AirPods+Pro+2', verifiedAt: '2026-09-19', referenceCurrency: 'USD', sourceType: 'international' },
 ];
 
 export async function ensureVerifiedMarketplaceCatalog() {
