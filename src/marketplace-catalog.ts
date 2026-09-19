@@ -79,6 +79,9 @@ export async function ensureVerifiedMarketplaceCatalog() {
         category: item.category,
         priceRwf: item.priceRwf,
         productUrl: item.productUrl,
+        sourceShop: item.sourceShop,
+        sourceUrl: item.sourceUrl,
+        verifiedAt: new Date(item.verifiedAt),
         stock: 1,
         status: 'ACTIVE',
         description: 'Source: ' + item.sourceShop + '. Verified: ' + item.verifiedAt + '.'
@@ -90,6 +93,9 @@ export async function ensureVerifiedMarketplaceCatalog() {
         category: item.category,
         priceRwf: item.priceRwf,
         productUrl: item.productUrl,
+        sourceShop: item.sourceShop,
+        sourceUrl: item.sourceUrl,
+        verifiedAt: new Date(item.verifiedAt),
         stock: 1,
         status: 'ACTIVE',
         description: 'Source: ' + item.sourceShop + '. Verified: ' + item.verifiedAt + '.'
