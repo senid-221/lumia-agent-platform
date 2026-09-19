@@ -1332,7 +1332,6 @@ app.get('/api/v1/marketplace/products', async (request) => {
   const products = await db.product.findMany({
     where: {
       status: 'ACTIVE',
-      status: 'ACTIVE',
       ...(q.category ? { category: q.category } : {}),
       ...(q.search ? { OR: [{ name: { contains: q.search, mode: 'insensitive' } }, { description: { contains: q.search, mode: 'insensitive' } }, { category: { contains: q.search, mode: 'insensitive' } }] } : {})
     },
