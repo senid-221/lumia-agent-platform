@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Suspense, useState } from 'react';
-import { ArrowUp, Bot, Check, ChevronDown, FileText, Globe2, Image as ImageIcon, MapPin, Menu, MessageCircle, Music2, Paperclip, Plus, Search, Users, X, Sparkles } from 'lucide-react';
+import { ArrowUp, Bot, Check, ChevronDown, FileText, Globe2, Image as ImageIcon, MapPin, Menu, MessageCircle, Music2, Paperclip, Plus, Search, Users, X, Sparkles, ShoppingBag, LockKeyhole } from 'lucide-react';
 import { api } from '../../lib/api';
 import { useSearchParams } from 'next/navigation';
 
@@ -23,18 +23,23 @@ function ChatPageContent() {
   const [serviceAgents, setServiceAgents] = useState<Array<{ id: string; displayName: string; phone: string; location: string; serviceAreas: string[] }>>([]);
   const [agentsLoading, setAgentsLoading] = useState(false);
   const [requestMessage, setRequestMessage] = useState('');
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
   async function sendMessage(text?: string) {
     const value = (text ?? message).trim();
     if (!value || loading) return;
     setMessage('');
     setError('');
+    const token = window.localStorage.getItem('lumia_token');
+    if (!token) {
+      setMessage(value);
+      setShowLoginPrompt(true);
+      return;
+    }
     setMessages((items) => [...items, { role: 'user', content: value }]);
     setLoading(true);
 
     try {
-      const token = window.localStorage.getItem('lumia_token');
-      if (!token) throw new Error('Please log in first.');
       const result = await api<{ sessionId: string; message: string }>('/api/v1/chat', {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
@@ -106,6 +111,18 @@ function ChatPageContent() {
   }
 
   return (
+    {showLoginPrompt && <div className="fixed inset-0 z-[80] grid place-items-center bg-black/60 px-4 backdrop-blur-sm">
+  <div className="w-full max-w-sm rounded-3xl border border-white/10 bg-[#202024] p-6 shadow-2xl">
+    <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-violet-500/10 text-violet-300"><LockKeyhole size={20}/></div>
+    <h2 className="mt-4 text-center text-xl font-semibold text-white">Sign in to continue</h2>
+    <p className="mt-2 text-center text-sm leading-6 text-slate-400">Tangira conversation yawe nyuma yo kwinjira muri LUMIA. Irembo na Marketplace birahari muri chat.</p>
+    <div className="mt-5 grid gap-2">
+      <Link href="/login?next=/chat" className="rounded-xl bg-violet-600 px-4 py-3 text-center text-sm font-semibold text-white">Sign in</Link>
+      <Link href="/register?next=/chat" className="rounded-xl border border-white/10 px-4 py-3 text-center text-sm font-semibold text-slate-200">Create account</Link>
+      <button onClick={()=>setShowLoginPrompt(false)} className="rounded-xl px-4 py-3 text-sm text-slate-500">Not now</button>
+    </div>
+  </div>
+</div>}
     <main className="flex h-screen overflow-hidden bg-[#17171a] text-slate-100">
       <button onClick={() => setSidebarOpen(!sidebarOpen)} className="fixed left-4 top-4 z-50 grid h-9 w-9 place-items-center rounded-xl border border-white/10 bg-[#202024] lg:hidden">
         {sidebarOpen ? <X size={16}/> : <Menu size={16}/>}
@@ -126,6 +143,7 @@ function ChatPageContent() {
           <nav className="mt-5 space-y-1 text-sm">
             <div className="flex items-center gap-3 rounded-xl bg-white/[.06] px-3 py-2.5 text-white"><MessageCircle size={15}/> Chat</div>
             <Link href="/services" onClick={() => setSidebarOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-slate-500 hover:bg-white/[.04] hover:text-slate-200"><Globe2 size={15}/> Irembo</Link>
+            <Link href="/marketplace" onClick={() => setSidebarOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-slate-500 hover:bg-white/[.04] hover:text-slate-200"><ShoppingBag size={15}/> Marketplace</Link>
             <Link href="/agents" onClick={() => setSidebarOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-slate-500 hover:bg-white/[.04] hover:text-slate-200"><Users size={15}/> Agents</Link>
             <Link href="/builder" onClick={() => setSidebarOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-slate-500 hover:bg-white/[.04] hover:text-slate-200"><Sparkles size={15}/> Website Builder</Link>
           </nav>
@@ -197,10 +215,10 @@ function ChatPageContent() {
 )}
                   </div>
                 )}
-                <div className="mt-6 grid gap-2 sm:grid-cols-3">
-                  {['Build a website','Research a topic','Find an Irembo service'].map((item) => (
+                <div className="mt-6 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                  {['Build a website','Research a topic','Find an Irembo service','Find products on Marketplace'].map((item) => (
                     <button key={item} onClick={() => void sendMessage(item)} className="rounded-xl border border-white/10 bg-[#1d1d20] p-3 text-left text-sm text-slate-400 transition hover:border-violet-400/40 hover:bg-[#222225]">
-                      <div className="mb-9 text-slate-600">{item === 'Research a topic' ? <Search size={16}/> : item === 'Find an Irembo service' ? <Globe2 size={16}/> : <Bot size={16}/>}</div>
+                      <div className="mb-9 text-slate-600">{item === 'Research a topic' ? <Search size={16}/> : item === 'Find an Irembo service' ? <Globe2 size={16}/> : item === 'Find products on Marketplace' ? <ShoppingBag size={16}/> : <Bot size={16}/>}</div>
                       {item}
                     </button>
                   ))}
