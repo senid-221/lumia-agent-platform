@@ -130,6 +130,8 @@ export default function MarketplacePage() {
       }</div>}
     </main>
 
+    </main>
+
     <footer className="mt-10 border-t border-slate-200 bg-white">
       <div className="mx-auto max-w-7xl px-4 py-10 lg:px-6">
         <div className="grid gap-8 md:grid-cols-4">
@@ -140,4 +142,5 @@ export default function MarketplacePage() {
         </div>
       </div>
     </footer>
-  </main>
+  </main>;
+}
