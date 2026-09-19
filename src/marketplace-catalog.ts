@@ -142,10 +142,53 @@ export async function ensureVerifiedMarketplaceCatalog() {
         sourceUrl: item.sourceUrl,
         verifiedAt: new Date(item.verifiedAt),
         imageUrl: item.imageUrl,
+        priceStatus: item.priceStatus,
+        priceSourceShop: item.priceSourceShop,
+        priceSourceUrl: item.priceSourceUrl,
         stock: 1,
         status: 'ACTIVE',
         description: 'Source: ' + item.sourceShop + '. Verified: ' + item.verifiedAt + '.'
       }
     });
   }
+  // Category coverage: keep the store discoverable even before partners add inventory.
+  const categoryDefaults = [
+    ['Screen protectors', 'Screen protector / tempered glass'],
+    ['Mobile covers', 'Mobile phone covers'],
+    ['Keypad phones', 'Keypad phones'],
+    ['Solar panels', 'Solar panels and accessories'],
+    ['Car wheels', 'Car wheels and tyres'],
+    ['Motor wheels', 'Motorcycle wheels and tyres'],
+    ['Multi-sockets', 'Power strips and multi-sockets'],
+    ['Caps', 'Caps and hats'],
+    ['Tables', 'Tables'],
+    ['Chairs', 'Chairs'],
+    ['Bags', 'Bags'],
+    ['Jumpers', 'Jumpers and sweaters'],
+    ['Websites', 'Website services'],
+    ['Mobile apps', 'Mobile application services'],
+    ['Masonry equipment', 'Masonry equipment'],
+    ['Medicine', 'Health and pharmacy products'],
+    ['Body oil', 'Body oils and personal care'],
+    ['Toys', 'Toys and games']
+  ] as const;
+  for (const [category, name] of categoryDefaults) {
+    const exists = await db.product.findFirst({ where: { partnerId: partner.id, category } });
+    if (!exists) {
+      await db.product.create({ data: {
+        partnerId: partner.id,
+        name,
+        category,
+        description: 'Category listing — add a real product before ordering.',
+        priceRwf: null,
+        productUrl: null,
+        sourceShop: 'LUMIA Marketplace',
+        sourceUrl: null,
+        verifiedAt: new Date(),
+        stock: 0,
+        status: 'ACTIVE'
+      }});
+    }
+  }
+
 }
