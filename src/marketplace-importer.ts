@@ -14,7 +14,16 @@ export type ImportedProduct = {
 };
 
 function clean(value: string | null | undefined) {
-  return (value || '').replace(/\\s+/g, ' ').trim();
+  return (value || '').replace(/\s+/g, ' ').trim();
+}
+
+function isHttpUrl(value: string | null | undefined) {
+  try {
+    const u = new URL(value || '');
+    return u.protocol === 'http:' || u.protocol === 'https:';
+  } catch {
+    return false;
+  }
 }
 
 export function normalizeImportedProduct(input: ImportedProduct) {
@@ -38,7 +47,7 @@ export async function importProductsForPartner(args: { partnerId: string; produc
   const results = [];
   for (const raw of args.products.slice(0, 100)) {
     const p = normalizeImportedProduct(raw);
-    if (!p.name || !p.category || !p.productUrl || !p.sourceShop || !p.sourceUrl) continue;
+    if (!p.name || !p.category || !isHttpUrl(p.productUrl) || !p.sourceShop || !isHttpUrl(p.sourceUrl) || !isHttpUrl(p.imageUrl)) continue;
     const existing = await db.product.findFirst({
       where: { partnerId: args.partnerId, productUrl: p.productUrl }
     });
